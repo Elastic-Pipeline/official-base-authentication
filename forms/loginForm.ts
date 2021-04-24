@@ -2,6 +2,7 @@ import { Basic, Form, FormMethod } from "../../../API/FormFactory";
 import { Route } from "../../../API/Routing";
 import { Bootstrap4 } from "../../official-bootstrap-forms/forms/Bootstrap4Forms";
 
+
 export class LoginForm extends Form
 {
     constructor(_route: Route)

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include(MODULE_Official_Generic_Layout + '/partials/head'); %>
+</head>
+<body class="container">
+
+<header>
+    <%- include(MODULE_Official_Generic_Layout + '/partials/header'); %>
+</header>
+
+<main>
+    <div class="jumbotron">
+        <h1>This is great</h1>
+        <p>Welcome to templating using EJS</p>
+        <a href="<%- link('home') -%>">Home</a>
+        <img src="<%- asset('placeholder.jpg') -%>"/>
+    </div>
+</main>
+
+<footer>
+    <%- include(MODULE_Official_Generic_Layout + '/partials/footer'); %>
+</footer>
+
+</body>
+</html>

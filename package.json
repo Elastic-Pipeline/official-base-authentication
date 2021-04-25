@@ -4,6 +4,11 @@
     ],
     "dependencies": 
     {
+        "express-session": "1.17.1",
         "sqlite3": "5.0.2"
+    },
+    "devDependencies": 
+    {
+        "@types/express-session": "1.17.1"
     }
 }

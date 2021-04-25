@@ -5,6 +5,7 @@ import session from 'express-session';
 import crypto from "crypto";
 import fs from "fs";
 import path from "path";
+import sqlite from "sqlite3";
 import { InDevelopment } from "../../API/internal/statics";
 
 const SECOND = 1000;

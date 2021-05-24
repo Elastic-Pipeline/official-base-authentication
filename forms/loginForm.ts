@@ -1,7 +1,7 @@
 import { Basic, Form, FormFieldBase, FormMethod } from "../../../API/FormFactory";
 import { Route } from "../../../API/Routing";
 import { Bootstrap4 } from "../../official-bootstrap-forms/forms/Bootstrap4Forms";
-
+import { UserBase, UserBaseManager } from "../classes/UserBase";
 
 export class LoginForm extends Form
 {
@@ -19,6 +19,11 @@ export class LoginForm extends Form
         this.rememberMe         =   this.AddField(new Bootstrap4.CheckboxFormField("rememberMe", false).SetLabel("Remember Me"));
                                     this.AddField(new Bootstrap4.SubmitFormField("submit", "Login"));
                                     this.AddField(new Basic.CaptchaV1FormField("captcha"));
+    }
+
+    public GetUser() : UserBase | undefined
+    {
+        return UserBaseManager.GetUserByAccessIdentifier(this.GetAccessIdentifierField().GetValue(), this.GetPasswordField().GetValue());
     }
 
     public GetAccessIdentifierField() : FormFieldBase

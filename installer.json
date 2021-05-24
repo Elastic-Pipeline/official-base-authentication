@@ -1,0 +1,17 @@
+[
+    {
+        "name" : "general",
+        "type" : "Label",
+        "label": "Administrator Account must be created for this package before continuing."
+    },
+    {
+        "name" : "username",
+        "type" : "Text",
+        "label": "Username"
+    },
+    {
+        "name" : "password",
+        "type" : "Password",
+        "label": "Password"
+    }
+]

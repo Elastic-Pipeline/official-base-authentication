@@ -1,7 +1,6 @@
 import { Form } from "../../../API/FormFactory";
 import { RouteManager } from "../../../API/internal/RouteManager";
-import { Logger } from "../../../API/Logging";
-import { Route, RouteType } from "../../../API/Routing";
+import { Route, RouteType, ROUTE_FIRST } from "../../../API/Routing";
 import { LoginForm } from "../forms/loginForm";
 
 export class LoginRoute extends Route
@@ -12,26 +11,43 @@ export class LoginRoute extends Route
 
         this.CustomRoute(RouteType.GET | RouteType.POST, "login", (req, res, next) => 
         {
-            const loginForm = Form.CreateForm(new LoginForm(this), res);
+            const loginForm = Form.CreateForm(new LoginForm(this), res) as LoginForm;
             if (loginForm.Verify(req))
             {
-                console.log("Verified");
+                const user = loginForm.GetUser();
+                if (user == undefined)
+                {
+                    return next();
+                }
+                res.cookie('session', user.GetId()); // Temporary thing; we just want to see, if we can pick it up later...
+                return res.redirect(RouteManager.GetRouteLabel('index'));
             }
 
-            res.status(200).render('views/login.ejs', { login_form: loginForm.View() });
-        }, 'login');
+            return res.status(200).render('views/login.ejs', { login_form: loginForm.View() });
+        }, 'login', ROUTE_FIRST);
 
         this.CustomRoute(RouteType.GET | RouteType.POST, "register", (req, res, next) => 
         {
-            res.status(200);
+            // const user = UserBaseManager.NewUser();
+            // const registerForm = user.GenerateRegisterForm(this);
+            return res.status(200);
         }, 'register');
 
         this.Get("logout", (req, res, next) => 
         {
-            res.redirect(RouteManager.GetRouteLabel('home'));
-            req.session.destroy((err) => {
-                Logger.error("Session cookie Destruction Error:", err);
-            });
+            // Clean out all cookies...
+            const cookie = req.cookies;
+            for (var prop in cookie) 
+            {
+                if (!cookie.hasOwnProperty(prop)) 
+                {
+                    continue;
+                }    
+                res.clearCookie(prop);
+            }
+
+            // Redirect to home; which should take you back to login (if enabled)
+            res.redirect(RouteManager.GetRouteLabel('index'));
         }, 'logout');
     }
 }

@@ -5,8 +5,13 @@
     </head>
     <body class="container" style="overflow-y: hidden;"> 
         <main class="d-flex justify-content-md-center align-items-center vh-100">
+            <%- placeholder('150') %>
             <%- login_form %>
-            <%- include(MODULE_Official_Generic_Layout + '/partials/footer'); %>
         </main>
+        <nav class="navbar fixed-bottom navbar-expand-sm navbar-dark bg-dark">
+          <div class="mx-auto">
+            <%- include(INTERNAL_MODULE_GLOBAL + '/partials/footer'); %>
+          </div>
+        </nav>
     </body>
 </html>

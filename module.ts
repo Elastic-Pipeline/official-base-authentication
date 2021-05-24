@@ -1,12 +1,14 @@
-import { Module, ModuleManager } from "../../API/Module";
-import { OverrideIndexSecurityRoute } from "./routes/override_index";
+import { AttachmentAppIntegration, Module, ModuleManager } from "../../API/Module";
 import { LoginRoute } from "./routes/login";
 import session from 'express-session';
 import crypto from "crypto";
 import fs from "fs";
 import path from "path";
-import sqlite from "sqlite3";
 import { InDevelopment } from "../../API/internal/statics";
+import { RouteManager } from "../../API/internal/RouteManager";
+import { Route } from "../../API/Routing";
+import { BasicUser, UserBaseManager } from "./classes/UserBase";
+import { DataStore, SqliteDataStore } from "./classes/DataStore";
 
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;
@@ -20,6 +22,13 @@ class BaseModule extends Module
     constructor()
     {
         super("Base Authentication", fs.readFileSync(path.resolve(__dirname, "./version.txt")).toString("utf-8"));
+
+        const sqliteInterface = new SqliteDataStore(path.resolve(__dirname, 'data'));
+        DataStore.RegisterInterface(sqliteInterface);
+        DataStore.SetDataStore(sqliteInterface);
+
+        UserBaseManager.RegisterUserBase(new BasicUser);
+        UserBaseManager.SetUserBase(BasicUser);
 
         this.RegisterAppIntegration((_app) => {
             _app.use(
@@ -35,9 +44,48 @@ class BaseModule extends Module
                     }
                 })
             );
-        });
+            
+            _app.use((req, res, next) =>
+            {
+                const url = Route.SanitizeURL(req.url);
+                console.log(req.ip, req.method, url);
 
-        this.RegisterRoute(new OverrideIndexSecurityRoute());
+                const whitelistedURLs = [RouteManager.GetRouteLabel('license')];
+                const loginURL = RouteManager.GetRouteLabel('login');
+
+                const usr = UserBaseManager.GetUser(req);
+                
+                var loggedOut = false;
+                if (usr == undefined)
+                {
+                    loggedOut = true;
+                }
+                else
+                {
+                    _app.locals.user = usr;
+                }
+
+                if (loggedOut && (url != loginURL && !url.startsWith('/static') && !url.endsWith("favicon.ico") && !whitelistedURLs.includes(url)))
+                {
+                    console.log("Unauthorized.", url != loginURL, !url.startsWith('/static'), !whitelistedURLs.includes(url));
+                    return res.redirect(loginURL);
+                }
+                if (usr != undefined)
+                {
+                    console.log("Authorized.");
+                    if (usr instanceof BasicUser)
+                    {
+                        console.log("Explicit:", usr as BasicUser);
+                    }
+                    else
+                    {
+                        console.log("Implicit:", usr);
+                    }
+                }
+                return next();
+            });
+        }, AttachmentAppIntegration.PRE);
+
         this.RegisterRoute(new LoginRoute());
     }
 }

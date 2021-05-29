@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { Request, Response } from "express";
-import { Form } from "../../../API/FormFactory";
+import { Form } from "../../../API/RenderBits/FormFactory";
 import { Route } from "../../../API/Routing";
 import { RegistrationForm } from "../forms/registrationForm";
 
@@ -12,9 +12,9 @@ export class UserBase
     private email:string        = "";
     private password:string     = ""; 
 
-    constructor(_typeName: string)
+    constructor()
     {
-        this.type = _typeName;
+        this.type = this.constructor.name;
     }
 
     public GetType() : string
@@ -147,7 +147,7 @@ export class BasicUser extends UserBase
 
     constructor()
     {
-        super("BasicUser");
+        super();
     }
     
     public LoginById(_id: number): boolean 

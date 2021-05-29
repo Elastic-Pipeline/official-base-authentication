@@ -1,4 +1,4 @@
-import { Basic, Form, FormFieldBase, FormMethod } from "../../../API/FormFactory";
+import { Basic, Form, FormFieldBase, FormMethod } from "../../../API/RenderBits/FormFactory";
 import { Route } from "../../../API/Routing";
 import { Bootstrap4 } from "../../official-bootstrap-forms/forms/Bootstrap4Forms";
 

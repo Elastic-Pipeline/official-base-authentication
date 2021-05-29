@@ -1,4 +1,4 @@
-import { Form } from "../../../API/FormFactory";
+import { Form } from "../../../API/RenderBits/FormFactory";
 import { RouteManager } from "../../../API/internal/RouteManager";
 import { Route, RouteType, ROUTE_FIRST } from "../../../API/Routing";
 import { LoginForm } from "../forms/loginForm";

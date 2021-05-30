@@ -1,7 +1,9 @@
 import { Form } from "../../../API/RenderBits/FormFactory";
-import { RouteManager } from "../../../API/internal/RouteManager";
-import { Route, RouteType, ROUTE_FIRST } from "../../../API/Routing";
+import { RouteManager } from "../../../API/Routing/RouteManager";
+import { Route, RouteType, ROUTE_FIRST } from "../../../API/Routing/Routing";
+import { UserBaseManager } from "../classes/UserBase";
 import { LoginForm } from "../forms/loginForm";
+import { RegistrationForm } from "../forms/registrationForm";
 
 export class LoginRoute extends Route
 {
@@ -9,31 +11,63 @@ export class LoginRoute extends Route
     {
         super("/");
 
-        this.CustomRoute(RouteType.GET | RouteType.POST, "login", (req, res, next) => 
+        this.CustomRoute(RouteType.GET | RouteType.POST, "login", async (req, res, next) => 
         {
             const loginForm = Form.CreateForm(new LoginForm(this), res) as LoginForm;
             if (loginForm.Verify(req))
             {
-                const user = loginForm.GetUser();
-                if (user == undefined)
+                const user = await loginForm.GetUser();
+                if (user != undefined)
                 {
-                    return next();
+                    console.log("Login ID: ", user.GetId());
+                    // res.cookie('session', user.GetId()); // Temporary thing; we just want to see, if we can pick it up later...
+                    console.log("Cached ID: ", user.GetId());
+                    return res.redirect(RouteManager.GetRouteLabel('index'));
                 }
-                res.cookie('session', user.GetId()); // Temporary thing; we just want to see, if we can pick it up later...
-                return res.redirect(RouteManager.GetRouteLabel('index'));
             }
 
             return res.status(200).render('views/login.ejs', { login_form: loginForm.View() });
         }, 'login', ROUTE_FIRST);
 
-        this.CustomRoute(RouteType.GET | RouteType.POST, "register", (req, res, next) => 
+        this.CustomRoute(RouteType.GET | RouteType.POST, "register", async (req, res, next) => 
         {
-            // const user = UserBaseManager.NewUser();
-            // const registerForm = user.GenerateRegisterForm(this);
-            return res.status(200);
+            const user = UserBaseManager.NewUser();
+            if (user == null)
+            {
+                throw new Error("No Possible User to register!");
+            }
+            const registerForm = user.GenerateRegisterForm(this, res) as RegistrationForm;
+            if (registerForm == undefined)
+            {
+                throw new Error("No Register Form!");
+            }
+
+            if (registerForm.Verify(req))
+            {
+                console.log(registerForm.GetUserName(), registerForm.GetEmail(), registerForm.GetPassword());
+                user.SetUsername(registerForm.GetUserName());
+                user.SetPassword(registerForm.GetPassword());
+                user.SetEmail(registerForm.GetEmail());
+                if (await user.Submit())
+                {
+                    console.log("Register ID: ", user.GetId());
+                    res.cookie('session', user.GetId()); // Temporary thing; we just want to see, if we can pick it up later...
+                    return res.redirect(RouteManager.GetRouteLabel('index'));
+                }
+                else
+                {
+                    // Send Error to user...
+                }
+            }
+            else
+            {
+                // Grab Errors, and send to user.
+            }
+
+            return res.status(200).render('views/login.ejs', { login_form: registerForm.View() });
         }, 'register');
 
-        this.Get("logout", (req, res, next) => 
+        this.Get("logout", async (req, res, next) => 
         {
             // Clean out all cookies...
             const cookie = req.cookies;

@@ -1,13 +1,13 @@
-import { AttachmentAppIntegration, Module, ModuleManager } from "../../API/Module";
+import { AttachmentAppIntegration, Module, ModuleManager } from "../../API/Modules/Module";
 import { LoginRoute } from "./routes/login";
 import session from 'express-session';
 import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import { InDevelopment } from "../../API/internal/statics";
-import { RouteManager } from "../../API/internal/RouteManager";
-import { Route } from "../../API/Routing";
-import { BasicUser, UserBaseManager } from "./classes/UserBase";
+import { RouteManager } from "../../API/Routing/RouteManager";
+import { Route } from "../../API/Routing/Routing";
+import { BasicUser, BasicUserController, UserBaseManager } from "./classes/UserBase";
 import { DataStore, SqliteDataStore } from "./classes/DataStore";
 
 const SECOND = 1000;
@@ -27,8 +27,7 @@ class BaseModule extends Module
         DataStore.RegisterInterface(sqliteInterface);
         DataStore.SetDataStore(sqliteInterface);
 
-        UserBaseManager.RegisterUserBase(new BasicUser);
-        UserBaseManager.SetUserBase(BasicUser);
+        UserBaseManager.SetUserBaseController(new BasicUserController);
 
         this.RegisterAppIntegration((_app) => {
             _app.use(
@@ -45,15 +44,15 @@ class BaseModule extends Module
                 })
             );
             
-            _app.use((req, res, next) =>
+            _app.use(async (req, res, next) =>
             {
                 const url = Route.SanitizeURL(req.url);
                 console.log(req.ip, req.method, url);
 
-                const whitelistedURLs = [RouteManager.GetRouteLabel('license')];
+                const whitelistedURLs = [RouteManager.GetRouteLabel('license'), RouteManager.GetRouteLabel('register')];
                 const loginURL = RouteManager.GetRouteLabel('login');
 
-                const usr = UserBaseManager.GetUser(req);
+                const usr = await UserBaseManager.GetUser(req);
                 
                 var loggedOut = false;
                 if (usr == undefined)

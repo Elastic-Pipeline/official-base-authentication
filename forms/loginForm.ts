@@ -1,5 +1,5 @@
 import { Basic, Form, FormFieldBase, FormMethod } from "../../../API/RenderBits/FormFactory";
-import { Route } from "../../../API/Routing";
+import { Route } from "../../../API/Routing/Routing";
 import { Bootstrap4 } from "../../official-bootstrap-forms/forms/Bootstrap4Forms";
 import { UserBase, UserBaseManager } from "../classes/UserBase";
 
@@ -21,9 +21,9 @@ export class LoginForm extends Form
                                     this.AddField(new Basic.CaptchaV1FormField("captcha"));
     }
 
-    public GetUser() : UserBase | undefined
+    public async GetUser() : Promise<UserBase|undefined>
     {
-        return UserBaseManager.GetUserByAccessIdentifier(this.GetAccessIdentifierField().GetValue(), this.GetPasswordField().GetValue());
+        return await UserBaseManager.GetUserByAccessIdentifier(this.GetAccessIdentifierField().GetValue(), this.GetPasswordField().GetValue());
     }
 
     public GetAccessIdentifierField() : FormFieldBase

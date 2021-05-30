@@ -1,14 +1,15 @@
 import crypto from "crypto";
 import { Request, Response } from "express";
 import { Form } from "../../../API/RenderBits/FormFactory";
-import { Route } from "../../../API/Routing";
+import { Route } from "../../../API/Routing/Routing";
 import { RegistrationForm } from "../forms/registrationForm";
+import { DataStore, DataStoreParameter, DataStoreTableVariable } from "./DataStore";
 
 export class UserBase
 {
-    private type: string = ""; 
+    private type: string        = ""; // This forces Typescript to recoginize the differences.
     private id:number           = -1;
-    private username: string = "";
+    private username: string    = "";
     private email:string        = "";
     private password:string     = ""; 
 
@@ -68,15 +69,32 @@ export class UserBase
     
     
     // Force Login
-    public LoginById(_id:number) : boolean { return false; }
+    public async LoginById(_id:number) : Promise<boolean>  { return false; }
     // Takes any AccessIdentifier (Username, Email, etc) and password from the user.
-    public Login(_accessIdentifier:string, _password:string) : boolean { return false; };
+    public async Login(_accessIdentifier:string, _password:string) : Promise<boolean> { return false; };
     // Encryption Method...
     public Encrypt(_password:string) : string { return _password; }
     // The form that would be shown to the user.
-    public GenerateRegisterForm(_route: Route) : Form|undefined { return undefined; }
+    public GenerateRegisterForm(_route: Route, _response: Response) : Form|undefined { return undefined; }
     // Takes all the information from this class and submits it to the data store.
-    public Register() : boolean { return false; }
+    public async Submit() : Promise<boolean> { return false; }
+}
+
+export class UserBaseController
+{    
+    private userBase: typeof UserBase;
+
+    constructor(_type: typeof UserBase)
+    {
+        this.userBase = _type;
+    }
+
+    public Initialize() : void {};
+
+    public GetUserBase() : typeof UserBase
+    {
+        return this.userBase;
+    }
 }
 
 function newObject<T>(_type: new(..._args: any[]) => T ) : T
@@ -86,17 +104,22 @@ function newObject<T>(_type: new(..._args: any[]) => T ) : T
 
 export class UserBaseManager
 {
-    private static currentUserBase: typeof UserBase|null = null;
-    private static userbases: UserBase[] = new Array();
+    private static currentUserBaseController: UserBaseController = new UserBaseController(UserBase);
+    private static userBaseControllers: UserBaseController[] = new Array();
 
-    public static GetUserByAccessIdentifier(_accessIdentifier: string, _password: string) : UserBase|undefined
+    public static async GetUserByAccessIdentifier(_accessIdentifier: string, _password: string) : Promise<UserBase|undefined>
     {
         const userT = this.NewUser();
         if (userT == undefined)
         {
             return undefined;
         }
-        userT.Login(_accessIdentifier, _password);
+        console.log("[Before Login]", userT);
+        if ((await userT.Login(_accessIdentifier, _password)) == false)
+        {
+            return undefined;
+        }
+        console.log("[After Login]", userT);
 
         return userT;
     } 
@@ -110,7 +133,7 @@ export class UserBaseManager
         }
         return newObject<UserBase>(this.GetUserBase() as typeof UserBase);
     } 
-    public static GetUser(_request: Request ) : UserBase|undefined
+    public static async GetUser(_request: Request ) : Promise<UserBase|undefined>
     {
         const sessionID = _request.cookies['session'];
         if (sessionID == undefined)
@@ -120,61 +143,133 @@ export class UserBaseManager
         if (userT == null)
             return undefined;
 
-        userT.LoginById(sessionID);
+        await userT.LoginById(sessionID);
         return userT;
-    } 
-
-
-    public static RegisterUserBase(_userbase: UserBase) : void
-    {
-        this.userbases.push(_userbase);
     }
 
-    public static GetUserBase() : typeof UserBase|null
+    public static RegisterUserBase(_userbaseController: UserBaseController) : void
     {
-        return this.currentUserBase;
+        _userbaseController.Initialize();
+        this.userBaseControllers.push(_userbaseController);
     }
 
-    public static SetUserBase(_userbase: typeof UserBase|null) : void
+    public static GetUserBaseController() : UserBaseController
     {
-        this.currentUserBase = _userbase;
+        return this.currentUserBaseController;
+    }
+    public static GetUserBase() : typeof UserBase
+    {
+        return this.GetUserBaseController().GetUserBase();
+    }
+
+    public static SetUserBaseController(_userbase: UserBaseController) : void
+    {
+        if (!this.userBaseControllers.includes(_userbase))
+        {
+            this.RegisterUserBase(_userbase);
+        }
+
+        this.currentUserBaseController = _userbase;
     }
 }
 
 export class BasicUser extends UserBase
 {
-    public myVar: string = "Hello World"; 
-
     constructor()
     {
         super();
     }
     
-    public LoginById(_id: number): boolean 
+    public async LoginById(_id: number): Promise<boolean> 
     {
+        console.log("Logging in by ID: ", _id);
+        const rows = await DataStore.FetchFromTable("users", ["*"], [`id=\"${_id}\"`], [], "LIMIT 1")
+        if (rows.length == 0)
+            return false;
+
+        const userData = rows[0];
+
+        this.SetId(userData.id);
+        this.SetUsername(userData.username);
+        this.SetPassword(userData.password);
+
         return true;
     }
-    public Login(_accessIdentifier: string, _password: string): boolean 
+    public async Login(_accessIdentifier: string, _password: string): Promise<boolean> 
     {
         _password = this.Encrypt(_password);
-        const accessIdentifier = '' + _accessIdentifier;
-        const password = '' + _password;
-        // Not exactly just yet...
-        this.SetId(1);
-        this.SetUsername(accessIdentifier);
-        this.SetPassword(password);
+        const accessIdentifier: string = '' + _accessIdentifier;
+        const password: string = '' + _password;
+        
+        const rows = await DataStore.FetchFromTable("users", ["*"], [`username=\"${accessIdentifier}\"`, `password=\"${password}\"`], [], "LIMIT 1")
+        if (rows.length == 0)
+            return false;
+
+        const userData = rows[0];
+        
+        this.SetId(userData.id);
+        this.SetUsername(userData.username);
+        this.SetPassword(userData.password);
+
         return true;
     }
     public Encrypt(_password: string): string 
     {
         return crypto.createHash('sha256').update(_password).digest('base64');
     }
-    public GenerateRegisterForm(_route: Route): Form 
+    public GenerateRegisterForm(_route: Route, _response: Response): Form|undefined
     {
-        return new RegistrationForm(_route);
+        return Form.CreateForm(new RegistrationForm(_route), _response);
     }
-    public Register(): boolean 
+    public async Submit(): Promise<boolean> 
     {
-        return true;
+        var success = false;
+        if (this.GetId() == -1)
+        {
+            success = await DataStore.InsertToTable("users", 
+                new DataStoreParameter("username", this.GetUsername()),
+                new DataStoreParameter("password", this.GetPassword()),
+                new DataStoreParameter("email", this.GetEmail()),
+            );
+
+            this.SetId(await DataStore.GetLastInsertID("users"));
+        }
+        else
+        {
+            success = await DataStore.UpdateTable("users", [`\`ID\`=${this.GetId()}`], new DataStoreParameter("username", this.GetUsername()), new DataStoreParameter("password", this.GetPassword()), new DataStoreParameter("email", this.GetEmail()))
+        }
+        
+        return success;
+    }
+}
+
+export class BasicUserController extends UserBaseController
+{
+    constructor()
+    {
+        super(BasicUser);
+    }
+    public async Initialize() : Promise<void> 
+    {
+        await DataStore.DeleteTable("users");
+        await DataStore.CreateTable("users", 
+            new DataStoreTableVariable("id", "INTEGER", "PRIMARY KEY AUTOINCREMENT NOT NULL"), 
+            new DataStoreTableVariable("username", "VARCHAR(35)", "NOT NULL"), 
+            new DataStoreTableVariable("password", "VARCHAR(512)", "NOT NULL"), 
+            new DataStoreTableVariable("email", "VARCHAR(64)", "NOT NULL"), 
+            new DataStoreTableVariable("creationDate", "TIMESTAMP", "DEFAULT CURRENT_TIMESTAMP NOT NULL")
+        );
+
+        const testUser = UserBaseManager.NewUser() as BasicUser;
+        testUser.SetUsername("Test User");
+        testUser.SetPassword("Test");
+        testUser.SetEmail("test@email.com");
+        await testUser.Submit();
+        testUser.SetUsername("test");
+        testUser.SetPassword("test");
+        await testUser.Submit();
+
+        const users = await DataStore.FetchFromTable("users", ["*"]);
+        console.log(__filename, users);
     }
 }

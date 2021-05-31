@@ -1,6 +1,7 @@
-import { Basic, Form, FormFieldBase, FormMethod } from "../../../API/RenderBits/FormFactory";
+import { Form, FormFieldBase, FormMethod } from "../../../API/RenderBits/FormFactory";
 import { Route } from "../../../API/Routing/Routing";
-import { Bootstrap4 } from "../../official-bootstrap-forms/forms/Bootstrap4Forms";
+import * as Basic from '../../../AppModules/GlobalPages/forms/BasicForms';
+import * as Bootstrap4 from "../../official-bootstrap-forms/forms/Bootstrap4Forms";
 import { UserBase, UserBaseManager } from "../classes/UserBase";
 
 export class LoginForm extends Form

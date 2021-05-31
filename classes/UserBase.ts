@@ -179,6 +179,11 @@ export class UserBaseManager
 
         this.currentUserBaseController = _userbase;
     }
+
+    public static CanRegister() : boolean
+    {
+        return true;
+    }
 }
 
 export class BasicUser extends UserBase

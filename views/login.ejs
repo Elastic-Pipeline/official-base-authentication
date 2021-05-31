@@ -2,16 +2,45 @@
 <html lang="en">
     <head>
         <%- include(MODULE_Official_Generic_Layout + '/partials/head'); %>
+        <link rel="stylesheet" href="<%- asset('css/login.css') %>">
     </head>
-    <body class="container" style="overflow-y: hidden;"> 
-        <main class="d-flex justify-content-md-center align-items-center vh-100">
-            <%- placeholder('150') %>
-            <%- login_form %>
-        </main>
-        <nav class="navbar fixed-bottom navbar-expand-sm navbar-dark bg-dark">
-          <div class="mx-auto">
-            <%- include(INTERNAL_MODULE_GLOBAL + '/partials/footer'); %>
+    <body>
+        <div class="global-container">
+
+          <div class="card">
+            <div class="row container">
+              <div class="col-6 h-100 my-auto">
+                <%- placeholder('350', { class: 'img-fluid' }) %>
+              </div>
+              <div class="col-6">
+                <div class="login-form px-4">
+                  <% if (typeof(notifications) == 'object') { %>
+                    <% for (var i=0; i<notifications.length; i++) { %>
+                      <div class="alert alert-warning" role="alert">
+                        <%- notifications[i].msg %>
+                      </div>
+                    <% } %>
+                  <% } %>
+
+                  <div class="card-body">
+                    <h5 class="card-title text-center">Login</h5>
+                    <hr/>
+                    <%- login_form %>
+                    <% if (canRegister) { %>
+                      <p class="text-center my-2">
+                        Don't have an account? <a href="<%- link('register') -%>">Join Us!</a><br/>
+                        <a href="<%- link('register') -%>">Forgot Password?</a>
+                      </p>
+                    <% } %>
+                  </div> <!-- <div class="card-body"> -->
+
+                  <div>
+                    <%- include(INTERNAL_MODULE_GLOBAL + '/partials/footer'); %>
+                  </div>
+                </div> <!-- <div class="card login-form px-4"> -->
+              </div> <!-- <div class="col-6"> -->
+            </div> <!-- <div class="row"> -->
           </div>
-        </nav>
+        </div> <!-- <div class="global-container"> -->
     </body>
 </html>

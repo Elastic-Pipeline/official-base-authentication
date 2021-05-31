@@ -22,6 +22,15 @@ export class LoginRoute extends Route
                     res.cookie('session', user.GetId()); // Temporary thing; we just want to see, if we can pick it up later...
                     return res.redirect(RouteManager.GetRouteLabel('index'));
                 }
+                Route.Notify(res, "error", "Username/Email or Password wasn't correct!");
+            }
+            else
+            {
+                const errors = loginForm.GetErrors(req);
+                for (let index = 0; index < errors.length; index++) {
+                    const element = errors[index];
+                    Route.Notify(res, "error", "Field Error :: " + element.message);
+                }
             }
 
             return res.render('views/login.ejs', { login_form: loginForm.View() });

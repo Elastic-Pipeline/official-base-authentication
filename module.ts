@@ -29,6 +29,8 @@ class BaseModule extends Module
 
         FirewallManager.SetFirewall(new BasicFirewall());
 
+        this.RegisterAssetFolder(__dirname + '/assets');
+
         this.RegisterAppIntegration((_app) => {
             _app.use(session({
                 secret: GetSecretSessionToken(),
@@ -44,6 +46,8 @@ class BaseModule extends Module
 
             _app.use(async (req, res, next) =>
             {
+                _app.locals.canRegister = UserBaseManager.CanRegister();
+
                 const firewall = FirewallManager.GetFirewall();
                 if (firewall == undefined)
                     return next();

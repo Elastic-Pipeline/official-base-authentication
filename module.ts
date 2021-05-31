@@ -23,9 +23,8 @@ class BaseModule extends Module
     {
         super("Base Authentication", fs.readFileSync(path.resolve(__dirname, "./version.txt")).toString("utf-8"));
 
-        const sqliteInterface = new SqliteDataStore(path.resolve(__dirname, 'data'));
-        DataStore.RegisterInterface(sqliteInterface);
-        DataStore.SetDataStore(sqliteInterface);
+        const dataStoreInterface = new SqliteDataStore(path.resolve(__dirname, 'data'));
+        DataStore.SetDataStore(dataStoreInterface);
 
         UserBaseManager.SetUserBaseController(new BasicUserController);
 
@@ -47,7 +46,6 @@ class BaseModule extends Module
             _app.use(async (req, res, next) =>
             {
                 const url = Route.SanitizeURL(req.url);
-                console.log(req.ip, req.method, url);
 
                 const whitelistedURLs = [RouteManager.GetRouteLabel('license'), RouteManager.GetRouteLabel('register')];
                 const loginURL = RouteManager.GetRouteLabel('login');
@@ -66,21 +64,9 @@ class BaseModule extends Module
 
                 if (loggedOut && (url != loginURL && !url.startsWith('/static') && !url.endsWith("favicon.ico") && !whitelistedURLs.includes(url)))
                 {
-                    console.log("Unauthorized.", url != loginURL, !url.startsWith('/static'), !whitelistedURLs.includes(url));
                     return res.redirect(loginURL);
                 }
-                if (usr != undefined)
-                {
-                    console.log("Authorized.");
-                    if (usr instanceof BasicUser)
-                    {
-                        console.log("Explicit:", usr as BasicUser);
-                    }
-                    else
-                    {
-                        console.log("Implicit:", usr);
-                    }
-                }
+
                 return next();
             });
         }, AttachmentAppIntegration.PRE);

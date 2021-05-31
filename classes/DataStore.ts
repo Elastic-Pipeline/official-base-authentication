@@ -107,6 +107,12 @@ export class DataStore
 
     public static SetDataStore(_interface: DataStoreInterface|undefined)
     {
+        if (_interface == undefined)
+            return;
+
+        if (!this.dataStoreInterfaces.includes(_interface))
+            this.RegisterInterface(_interface);
+
         this.currentDataStore = _interface;
     }
 
@@ -116,7 +122,7 @@ export class DataStore
         if (dataStore == undefined)
             return false;
         
-        return dataStore.CreateTable(_tableName, ..._variables);
+        return await dataStore.CreateTable(_tableName, ..._variables);
     }
     public static async FetchFromTable(_tableName: string, _items: string[] = ['*'], _where: string[] = [], _params: any[] = [], _postfix: string = ""): Promise<any[]> 
     {
@@ -124,7 +130,7 @@ export class DataStore
         if (dataStore == undefined)
             return [];
         
-        return dataStore.FetchFromTable(_tableName, _items, _where, _params, _postfix);
+        return await dataStore.FetchFromTable(_tableName, _items, _where, _params, _postfix);
     }
     public static async InsertToTable(_tableName: string, ..._parameters: DataStoreParameter[]) : Promise<boolean>
     {
@@ -132,7 +138,7 @@ export class DataStore
         if (dataStore == undefined)
             return false;
         
-        return dataStore.InsertToTable(_tableName, ..._parameters);
+        return await dataStore.InsertToTable(_tableName, ..._parameters);
     }
     public static async GetLastInsertID(_tableName: string) : Promise<number>
     {
@@ -140,7 +146,7 @@ export class DataStore
         if (dataStore == undefined)
             return -1;
         
-        return dataStore.GetLastInsertID(_tableName);
+        return await dataStore.GetLastInsertID(_tableName);
     }
     public static async UpdateTable(_tableName: string, _where: string[], ..._parameters: DataStoreParameter[]) : Promise<boolean>
     {
@@ -148,7 +154,7 @@ export class DataStore
         if (dataStore == undefined)
             return false;
         
-        return dataStore.UpdateTable(_tableName, _where, ..._parameters);
+        return await dataStore.UpdateTable(_tableName, _where, ..._parameters);
     }
     public static async RemoveRowFromTable(_tableName: string, _where: string[]) : Promise<boolean>
     {
@@ -156,7 +162,7 @@ export class DataStore
         if (dataStore == undefined)
             return false;
         
-        return dataStore.RemoveRowFromTable(_tableName, _where);
+        return await dataStore.RemoveRowFromTable(_tableName, _where);
     }
     public static async DeleteTable(_tableName: string) : Promise<boolean>
     {
@@ -164,7 +170,7 @@ export class DataStore
         if (dataStore == undefined)
             return false;
         
-        return dataStore.DeleteTable(_tableName);
+        return await dataStore.DeleteTable(_tableName);
     }
 }
 
@@ -190,7 +196,7 @@ export class SqliteDataStore extends DataStoreInterface
         });
     }
 
-    public async AllSync(_string: string, _values: any[]) : Promise<any[]>
+    public AllSync(_string: string, _values: any[]) : Promise<any[]>
     {
         return new Promise<any[]>((resolve, reject) => {
             this.db.all(_string, _values, (err: Error, rows: any[]) => {
@@ -205,26 +211,12 @@ export class SqliteDataStore extends DataStoreInterface
     public ExecSync(_string: string, _values: any[]): Promise<void> 
     {
         return new Promise<void>((resolve, reject) => {
-            this.Exec(_string, _values, (err) => {
+            this.db.run(_string, _values, (err: Error) => {
                 if (err)
                     return reject(err + ` - ${_string} (${_values})`);
 
                 return resolve();
             });
-        });
-    }
-    public Exec(_string: string, _values: any[], _cb: DataStoreFunc): void 
-    {
-        if (!this.isReady)
-            return;
-
-        this.db.run(_string, _values, (err: Error) => {
-            if (err)
-            {
-                Logger.error("Sqlite Exec Exception ::>", err, `- ${_string} (${_values})`);
-                return;
-            }
-            _cb(err);
         });
     }
     
@@ -258,8 +250,7 @@ export class SqliteDataStore extends DataStoreInterface
 
         try
         {
-            const rows = await this.AllSync(`SELECT ${_items.join(',')} FROM \`${_tableName}\` ${whereStr} ${_postfix}`, _params);
-            return rows;
+            return await this.AllSync(`SELECT ${_items.join(',')} FROM \`${_tableName}\` ${whereStr} ${_postfix}`, _params);
         }
         catch(err)
         {

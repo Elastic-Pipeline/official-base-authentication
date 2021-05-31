@@ -11,7 +11,7 @@ export class LoginRoute extends Route
     {
         super("/");
 
-        this.CustomRoute(RouteType.GET | RouteType.POST, "login", async (req, res, next) => 
+        this.CustomRoute(RouteType.GET | RouteType.POST, "login", async (req, res, next) : Promise<void> => 
         {
             const loginForm = Form.CreateForm(new LoginForm(this), res) as LoginForm;
             if (loginForm.Verify(req))
@@ -19,38 +19,31 @@ export class LoginRoute extends Route
                 const user = await loginForm.GetUser();
                 if (user != undefined)
                 {
-                    console.log("Login ID: ", user.GetId());
-                    // res.cookie('session', user.GetId()); // Temporary thing; we just want to see, if we can pick it up later...
-                    console.log("Cached ID: ", user.GetId());
+                    res.cookie('session', user.GetId()); // Temporary thing; we just want to see, if we can pick it up later...
                     return res.redirect(RouteManager.GetRouteLabel('index'));
                 }
             }
 
-            return res.status(200).render('views/login.ejs', { login_form: loginForm.View() });
+            return res.render('views/login.ejs', { login_form: loginForm.View() });
         }, 'login', ROUTE_FIRST);
 
         this.CustomRoute(RouteType.GET | RouteType.POST, "register", async (req, res, next) => 
         {
             const user = UserBaseManager.NewUser();
             if (user == null)
-            {
                 throw new Error("No Possible User to register!");
-            }
+
             const registerForm = user.GenerateRegisterForm(this, res) as RegistrationForm;
             if (registerForm == undefined)
-            {
                 throw new Error("No Register Form!");
-            }
 
             if (registerForm.Verify(req))
             {
-                console.log(registerForm.GetUserName(), registerForm.GetEmail(), registerForm.GetPassword());
                 user.SetUsername(registerForm.GetUserName());
                 user.SetPassword(registerForm.GetPassword());
                 user.SetEmail(registerForm.GetEmail());
                 if (await user.Submit())
                 {
-                    console.log("Register ID: ", user.GetId());
                     res.cookie('session', user.GetId()); // Temporary thing; we just want to see, if we can pick it up later...
                     return res.redirect(RouteManager.GetRouteLabel('index'));
                 }

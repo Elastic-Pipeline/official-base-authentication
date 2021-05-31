@@ -111,15 +111,10 @@ export class UserBaseManager
     {
         const userT = this.NewUser();
         if (userT == undefined)
-        {
             return undefined;
-        }
-        console.log("[Before Login]", userT);
+
         if ((await userT.Login(_accessIdentifier, _password)) == false)
-        {
             return undefined;
-        }
-        console.log("[After Login]", userT);
 
         return userT;
     } 
@@ -127,10 +122,7 @@ export class UserBaseManager
     public static NewUser() : UserBase|null
     {
         if (this.GetUserBase() == null)
-        {
             throw new Error("No active Current User Base was Set!");
-            return null;
-        }
         return newObject<UserBase>(this.GetUserBase() as typeof UserBase);
     } 
     public static async GetUser(_request: Request ) : Promise<UserBase|undefined>
@@ -182,7 +174,6 @@ export class BasicUser extends UserBase
     
     public async LoginById(_id: number): Promise<boolean> 
     {
-        console.log("Logging in by ID: ", _id);
         const rows = await DataStore.FetchFromTable("users", ["*"], [`id=\"${_id}\"`], [], "LIMIT 1")
         if (rows.length == 0)
             return false;
@@ -268,8 +259,5 @@ export class BasicUserController extends UserBaseController
         testUser.SetUsername("test");
         testUser.SetPassword("test");
         await testUser.Submit();
-
-        const users = await DataStore.FetchFromTable("users", ["*"]);
-        console.log(__filename, users);
     }
 }

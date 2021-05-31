@@ -11,7 +11,7 @@ export class RegistrationForm extends Form
     constructor(_route: Route)
     {
         super('registration', _route, FormMethod.POST);
-        
+
         this.username = this.AddField(new Bootstrap4.TextFormField("username", true, "Username"));
         this.email = this.AddField(new Bootstrap4.TextFormField("email", true, "Email"));
         this.password = this.AddField(new Bootstrap4.PasswordFormField("password", true).SetLabel('Password'));
@@ -24,12 +24,12 @@ export class RegistrationForm extends Form
     {
         return this.username.GetValue();
     }
-    
+
     public GetEmail() : string
     {
         return this.email.GetValue();
     }
-    
+
     public GetPassword() : string
     {
         return this.password.GetValue();

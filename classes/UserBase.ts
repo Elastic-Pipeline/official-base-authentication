@@ -11,7 +11,7 @@ export class UserBase
     private id:number           = -1;
     private username: string    = "";
     private email:string        = "";
-    private password:string     = ""; 
+    private password:string     = "";
 
     constructor()
     {
@@ -35,7 +35,7 @@ export class UserBase
     }
 
     // Get the User's name.
-    public GetUsername() : string 
+    public GetUsername() : string
     {
         return this.username;
     }
@@ -46,7 +46,7 @@ export class UserBase
     }
 
     // Get the User's Email.
-    public GetEmail() : string 
+    public GetEmail() : string
     {
         return this.email;
     }
@@ -55,9 +55,9 @@ export class UserBase
     {
         this.email = _value;
     }
-    
+
     // Grab the encrypted password.
-    public GetPassword() : string 
+    public GetPassword() : string
     {
         return this.password;
     }
@@ -66,8 +66,8 @@ export class UserBase
     {
         this.password = this.Encrypt(_value);
     }
-    
-    
+
+
     // Force Login
     public async LoginById(_id:number) : Promise<boolean>  { return false; }
     // Takes any AccessIdentifier (Username, Email, etc) and password from the user.
@@ -81,7 +81,7 @@ export class UserBase
 }
 
 export class UserBaseController
-{    
+{
     private userBase: typeof UserBase;
 
     constructor(_type: typeof UserBase)
@@ -111,12 +111,12 @@ export class UserBaseManager
     {
         // Clean out all cookies...
         const cookie = _request.cookies;
-        for (var prop in cookie) 
+        for (var prop in cookie)
         {
-            if (!cookie.hasOwnProperty(prop)) 
+            if (!cookie.hasOwnProperty(prop))
             {
                 continue;
-            }    
+            }
             _response.clearCookie(prop);
         }
     }
@@ -131,27 +131,27 @@ export class UserBaseManager
             return undefined;
 
         return userT;
-    } 
+    }
 
     public static NewUser() : UserBase|null
     {
         if (this.GetUserBase() == null)
             throw new Error("No active Current User Base was Set!");
         return newObject<UserBase>(this.GetUserBase() as typeof UserBase);
-    } 
+    }
     public static async GetUser(_request: Request ) : Promise<UserBase|undefined>
     {
         const sessionID = _request.cookies['session'];
         if (sessionID == undefined)
             return undefined;
-        
+
         const userT = this.NewUser();
         if (userT == null)
             return undefined;
 
         if ((await userT.LoginById(sessionID)) == false)
             return undefined;
-            
+
         return userT;
     }
 
@@ -187,8 +187,8 @@ export class BasicUser extends UserBase
     {
         super();
     }
-    
-    public async LoginById(_id: number): Promise<boolean> 
+
+    public async LoginById(_id: number): Promise<boolean>
     {
         const rows = await DataStore.FetchFromTable("users", ["*"], [`id=\"${_id}\"`], [], "LIMIT 1")
         if (rows.length == 0)
@@ -202,25 +202,25 @@ export class BasicUser extends UserBase
 
         return true;
     }
-    public async Login(_accessIdentifier: string, _password: string): Promise<boolean> 
+    public async Login(_accessIdentifier: string, _password: string): Promise<boolean>
     {
         _password = this.Encrypt(_password);
         const accessIdentifier: string = '' + _accessIdentifier;
         const password: string = '' + _password;
-        
+
         const rows = await DataStore.FetchFromTable("users", ["*"], [`username=\"${accessIdentifier}\"`, `password=\"${password}\"`], [], "LIMIT 1")
         if (rows.length == 0)
             return false;
 
         const userData = rows[0];
-        
+
         this.SetId(userData.id);
         this.SetUsername(userData.username);
         this.SetPassword(userData.password);
 
         return true;
     }
-    public Encrypt(_password: string): string 
+    public Encrypt(_password: string): string
     {
         return crypto.createHash('sha256').update(_password).digest('base64');
     }
@@ -228,12 +228,12 @@ export class BasicUser extends UserBase
     {
         return Form.CreateForm(new RegistrationForm(_route), _response);
     }
-    public async Submit(): Promise<boolean> 
+    public async Submit(): Promise<boolean>
     {
         var success = false;
         if (this.GetId() == -1)
         {
-            success = await DataStore.InsertToTable("users", 
+            success = await DataStore.InsertToTable("users",
                 new DataStoreParameter("username", this.GetUsername()),
                 new DataStoreParameter("password", this.GetPassword()),
                 new DataStoreParameter("email", this.GetEmail()),
@@ -245,7 +245,7 @@ export class BasicUser extends UserBase
         {
             success = await DataStore.UpdateTable("users", [`\`ID\`=${this.GetId()}`], new DataStoreParameter("username", this.GetUsername()), new DataStoreParameter("password", this.GetPassword()), new DataStoreParameter("email", this.GetEmail()))
         }
-        
+
         return success;
     }
 }
@@ -256,14 +256,14 @@ export class BasicUserController extends UserBaseController
     {
         super(BasicUser);
     }
-    public async Initialize() : Promise<void> 
+    public async Initialize() : Promise<void>
     {
         await DataStore.DeleteTable("users");
-        await DataStore.CreateTable("users", 
-            new DataStoreTableVariable("id", "INTEGER", "PRIMARY KEY AUTOINCREMENT NOT NULL"), 
-            new DataStoreTableVariable("username", "VARCHAR(35)", "NOT NULL"), 
-            new DataStoreTableVariable("password", "VARCHAR(512)", "NOT NULL"), 
-            new DataStoreTableVariable("email", "VARCHAR(64)", "NOT NULL"), 
+        await DataStore.CreateTable("users",
+            new DataStoreTableVariable("id", "INTEGER", "PRIMARY KEY AUTOINCREMENT NOT NULL"),
+            new DataStoreTableVariable("username", "VARCHAR(35)", "NOT NULL"),
+            new DataStoreTableVariable("password", "VARCHAR(512)", "NOT NULL"),
+            new DataStoreTableVariable("email", "VARCHAR(64)", "NOT NULL"),
             new DataStoreTableVariable("creationDate", "TIMESTAMP", "DEFAULT CURRENT_TIMESTAMP NOT NULL")
         );
 

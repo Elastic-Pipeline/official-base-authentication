@@ -41,15 +41,15 @@ class BaseModule extends Module
                     secure: IsHTTPS()
                 }
             }));
-            
+
             _app.use(async (req, res, next) =>
             {
                 const firewall = FirewallManager.GetFirewall();
                 if (firewall == undefined)
                     return next();
-                
+
                 await firewall.call('enter', _app, req, res);
-                
+
                 if (res.statusMessage == undefined)
                 {
                     return next();

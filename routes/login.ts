@@ -11,7 +11,7 @@ export class LoginRoute extends Route
     {
         super("/");
 
-        this.CustomRoute(RouteType.GET | RouteType.POST, "login", async (req, res, next) : Promise<void> => 
+        this.CustomRoute(RouteType.GET | RouteType.POST, "login", async (req, res, next) : Promise<void> =>
         {
             const loginForm = Form.CreateForm(new LoginForm(this), res) as LoginForm;
             if (loginForm.Verify(req))
@@ -27,7 +27,7 @@ export class LoginRoute extends Route
             return res.render('views/login.ejs', { login_form: loginForm.View() });
         }, 'login', ROUTE_FIRST);
 
-        this.CustomRoute(RouteType.GET | RouteType.POST, "register", async (req, res, next) => 
+        this.CustomRoute(RouteType.GET | RouteType.POST, "register", async (req, res, next) =>
         {
             const user = UserBaseManager.NewUser();
             if (user == null)
@@ -60,7 +60,7 @@ export class LoginRoute extends Route
             return res.status(200).render('views/login.ejs', { login_form: registerForm.View() });
         }, 'register');
 
-        this.Get("logout", async (req, res, next) => 
+        this.Get("logout", async (req, res, next) =>
         {
             UserBaseManager.Logout(req, res);
 

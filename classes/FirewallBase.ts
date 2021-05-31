@@ -62,12 +62,12 @@ export class BasicFirewall extends FirewallBase
         super();
         this.on('enter', async (_app : Application, req : Request, res : Response) => {
             const url = Route.SanitizeURL(req.url);
-            
+
             const whitelistedURLs = [RouteManager.GetRouteLabel('license'), RouteManager.GetRouteLabel('register')];
             const loginURL = RouteManager.GetRouteLabel('login');
 
             const usr = await UserBaseManager.GetUser(req);
-            
+
             var loggedOut = false;
             if (usr == undefined)
             {

@@ -121,15 +121,15 @@ export class DataStore
         const dataStore = this.GetDataStore();
         if (dataStore == undefined)
             return false;
-        
+
         return await dataStore.CreateTable(_tableName, ..._variables);
     }
-    public static async FetchFromTable(_tableName: string, _items: string[] = ['*'], _where: string[] = [], _params: any[] = [], _postfix: string = ""): Promise<any[]> 
+    public static async FetchFromTable(_tableName: string, _items: string[] = ['*'], _where: string[] = [], _params: any[] = [], _postfix: string = ""): Promise<any[]>
     {
         const dataStore = this.GetDataStore();
         if (dataStore == undefined)
             return [];
-        
+
         return await dataStore.FetchFromTable(_tableName, _items, _where, _params, _postfix);
     }
     public static async InsertToTable(_tableName: string, ..._parameters: DataStoreParameter[]) : Promise<boolean>
@@ -137,7 +137,7 @@ export class DataStore
         const dataStore = this.GetDataStore();
         if (dataStore == undefined)
             return false;
-        
+
         return await dataStore.InsertToTable(_tableName, ..._parameters);
     }
     public static async GetLastInsertID(_tableName: string) : Promise<number>
@@ -145,7 +145,7 @@ export class DataStore
         const dataStore = this.GetDataStore();
         if (dataStore == undefined)
             return -1;
-        
+
         return await dataStore.GetLastInsertID(_tableName);
     }
     public static async UpdateTable(_tableName: string, _where: string[], ..._parameters: DataStoreParameter[]) : Promise<boolean>
@@ -153,7 +153,7 @@ export class DataStore
         const dataStore = this.GetDataStore();
         if (dataStore == undefined)
             return false;
-        
+
         return await dataStore.UpdateTable(_tableName, _where, ..._parameters);
     }
     public static async RemoveRowFromTable(_tableName: string, _where: string[]) : Promise<boolean>
@@ -161,7 +161,7 @@ export class DataStore
         const dataStore = this.GetDataStore();
         if (dataStore == undefined)
             return false;
-        
+
         return await dataStore.RemoveRowFromTable(_tableName, _where);
     }
     public static async DeleteTable(_tableName: string) : Promise<boolean>
@@ -169,7 +169,7 @@ export class DataStore
         const dataStore = this.GetDataStore();
         if (dataStore == undefined)
             return false;
-        
+
         return await dataStore.DeleteTable(_tableName);
     }
 }
@@ -208,7 +208,7 @@ export class SqliteDataStore extends DataStoreInterface
         });
     }
 
-    public ExecSync(_string: string, _values: any[]): Promise<void> 
+    public ExecSync(_string: string, _values: any[]): Promise<void>
     {
         return new Promise<void>((resolve, reject) => {
             this.db.run(_string, _values, (err: Error) => {
@@ -219,8 +219,8 @@ export class SqliteDataStore extends DataStoreInterface
             });
         });
     }
-    
-    public async CreateTable(_tableName: string, ..._variables: DataStoreTableVariable[]): Promise<boolean> 
+
+    public async CreateTable(_tableName: string, ..._variables: DataStoreTableVariable[]): Promise<boolean>
     {
         if (_variables.length == 0)
         {
@@ -240,7 +240,7 @@ export class SqliteDataStore extends DataStoreInterface
         return false;
     }
 
-    public async FetchFromTable(_tableName: string, _items: string[], _where: string[], _params: any[] = [], _postfix: string = ""): Promise<any[]> 
+    public async FetchFromTable(_tableName: string, _items: string[], _where: string[], _params: any[] = [], _postfix: string = ""): Promise<any[]>
     {
         var whereStr: string = "";
         if (_where.length > 0)
@@ -260,7 +260,7 @@ export class SqliteDataStore extends DataStoreInterface
         return [];
     }
 
-    public async InsertToTable(_tableName: string, ..._parameters: DataStoreParameter[]): Promise<boolean> 
+    public async InsertToTable(_tableName: string, ..._parameters: DataStoreParameter[]): Promise<boolean>
     {
         var variableNames: string[] = [];
         var variableValues: any[] = [];
@@ -298,7 +298,7 @@ export class SqliteDataStore extends DataStoreInterface
         return -1;
     }
 
-    public async UpdateTable(_tableName: string, _where: string[], ..._parameters: DataStoreParameter[]): Promise<boolean> 
+    public async UpdateTable(_tableName: string, _where: string[], ..._parameters: DataStoreParameter[]): Promise<boolean>
     {
         var variableNames: string[] = [];
         var variableValues: any[] = [];
@@ -327,7 +327,7 @@ export class SqliteDataStore extends DataStoreInterface
         return false;
     }
 
-    public async RemoveRowFromTable(_tableName: string, _where: string[]): Promise<boolean> 
+    public async RemoveRowFromTable(_tableName: string, _where: string[]): Promise<boolean>
     {
         try
         {
@@ -342,7 +342,7 @@ export class SqliteDataStore extends DataStoreInterface
         return false;
     }
 
-    public async DeleteTable(_tableName: string): Promise<boolean> 
+    public async DeleteTable(_tableName: string): Promise<boolean>
     {
         try
         {

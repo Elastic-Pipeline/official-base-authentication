@@ -13,7 +13,7 @@ export class LoginForm extends Form
     constructor(_route: Route)
     {
         super('login', _route, FormMethod.POST);
-        
+
         this.accessIdentifer    =   this.AddField(new Bootstrap4.TextFormField("accessIdentifer").SetLabel("Username/Email"));
         this.password           =   this.AddField(new Bootstrap4.PasswordFormField("password").SetLabel("Password"));
         this.rememberMe         =   this.AddField(new Bootstrap4.CheckboxFormField("rememberMe", false).SetLabel("Remember Me"));
@@ -30,12 +30,12 @@ export class LoginForm extends Form
     {
         return this.accessIdentifer;
     }
-    
+
     public GetPasswordField() : FormFieldBase
     {
         return this.password;
     }
-    
+
     public GetRememberMeField() : FormFieldBase
     {
         return this.rememberMe;

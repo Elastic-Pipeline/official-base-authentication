@@ -4,11 +4,10 @@ import session from 'express-session';
 import crypto from "crypto";
 import fs from "fs";
 import path from "path";
-import { InDevelopment } from "../../API/internal/statics";
-import { RouteManager } from "../../API/Routing/RouteManager";
-import { Route } from "../../API/Routing/Routing";
-import { BasicUser, BasicUserController, UserBaseManager } from "./classes/UserBase";
+import { IsHTTPS } from "../../API/internal/statics";
+import { BasicUserController, UserBaseManager } from "./classes/UserBase";
 import { DataStore, SqliteDataStore } from "./classes/DataStore";
+import { BasicFirewall, FirewallManager } from "./classes/FirewallBase";
 
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;
@@ -28,46 +27,33 @@ class BaseModule extends Module
 
         UserBaseManager.SetUserBaseController(new BasicUserController);
 
+        FirewallManager.SetFirewall(new BasicFirewall);
+
         this.RegisterAppIntegration((_app) => {
-            _app.use(
-                session({
-                    secret: GetSecretSessionToken(),
-                    name: "sid",
-                    resave: false,
-                    saveUninitialized: false,
-                    cookie: {
-                        maxAge: 2 * HOUR,
-                        sameSite: 'strict',
-                        secure: !InDevelopment()
-                    }
-                })
-            );
+            _app.use(session({
+                secret: GetSecretSessionToken(),
+                name: "sid",
+                resave: false,
+                saveUninitialized: false,
+                cookie: {
+                    maxAge: 2 * HOUR,
+                    sameSite: 'strict',
+                    secure: IsHTTPS()
+                }
+            }));
             
             _app.use(async (req, res, next) =>
             {
-                const url = Route.SanitizeURL(req.url);
-
-                const whitelistedURLs = [RouteManager.GetRouteLabel('license'), RouteManager.GetRouteLabel('register')];
-                const loginURL = RouteManager.GetRouteLabel('login');
-
-                const usr = await UserBaseManager.GetUser(req);
+                const firewall = FirewallManager.GetFirewall();
+                if (firewall == undefined)
+                    return next();
                 
-                var loggedOut = false;
-                if (usr == undefined)
+                await firewall.call('enter', _app, req, res);
+                
+                if (res.statusMessage == undefined)
                 {
-                    loggedOut = true;
+                    return next();
                 }
-                else
-                {
-                    _app.locals.user = usr;
-                }
-
-                if (loggedOut && (url != loginURL && !url.startsWith('/static') && !url.endsWith("favicon.ico") && !whitelistedURLs.includes(url)))
-                {
-                    return res.redirect(loginURL);
-                }
-
-                return next();
             });
         }, AttachmentAppIntegration.PRE);
 

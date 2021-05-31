@@ -62,16 +62,7 @@ export class LoginRoute extends Route
 
         this.Get("logout", async (req, res, next) => 
         {
-            // Clean out all cookies...
-            const cookie = req.cookies;
-            for (var prop in cookie) 
-            {
-                if (!cookie.hasOwnProperty(prop)) 
-                {
-                    continue;
-                }    
-                res.clearCookie(prop);
-            }
+            UserBaseManager.Logout(req, res);
 
             // Redirect to home; which should take you back to login (if enabled)
             res.redirect(RouteManager.GetRouteLabel('index'));

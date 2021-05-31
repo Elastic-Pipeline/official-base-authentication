@@ -107,6 +107,20 @@ export class UserBaseManager
     private static currentUserBaseController: UserBaseController = new UserBaseController(UserBase);
     private static userBaseControllers: UserBaseController[] = new Array();
 
+    public static Logout(_request: Request, _response: Response) : void
+    {
+        // Clean out all cookies...
+        const cookie = _request.cookies;
+        for (var prop in cookie) 
+        {
+            if (!cookie.hasOwnProperty(prop)) 
+            {
+                continue;
+            }    
+            _response.clearCookie(prop);
+        }
+    }
+
     public static async GetUserByAccessIdentifier(_accessIdentifier: string, _password: string) : Promise<UserBase|undefined>
     {
         const userT = this.NewUser();
@@ -135,7 +149,9 @@ export class UserBaseManager
         if (userT == null)
             return undefined;
 
-        await userT.LoginById(sessionID);
+        if ((await userT.LoginById(sessionID)) == false)
+            return undefined;
+            
         return userT;
     }
 

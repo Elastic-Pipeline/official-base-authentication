@@ -25,9 +25,9 @@ class BaseModule extends Module
         const dataStoreInterface = new SqliteDataStore(path.resolve(__dirname, 'data'));
         DataStore.SetDataStore(dataStoreInterface);
 
-        UserBaseManager.SetUserBaseController(new BasicUserController);
+        UserBaseManager.SetUserBaseController(new BasicUserController());
 
-        FirewallManager.SetFirewall(new BasicFirewall);
+        FirewallManager.SetFirewall(new BasicFirewall());
 
         this.RegisterAppIntegration((_app) => {
             _app.use(session({

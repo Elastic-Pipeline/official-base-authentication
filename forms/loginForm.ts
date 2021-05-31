@@ -24,7 +24,7 @@ export class LoginForm extends Form
 
     public async GetUser() : Promise<UserBase|undefined>
     {
-        return await UserBaseManager.GetUserByAccessIdentifier(this.GetAccessIdentifierField().GetValue(), this.GetPasswordField().GetValue());
+        return UserBaseManager.GetUserByAccessIdentifier(this.GetAccessIdentifierField().GetValue(), this.GetPasswordField().GetValue());
     }
 
     public GetAccessIdentifierField() : FormFieldBase

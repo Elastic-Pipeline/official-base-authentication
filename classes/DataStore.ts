@@ -122,7 +122,7 @@ export class DataStore
         if (dataStore == undefined)
             return false;
 
-        return await dataStore.CreateTable(_tableName, ..._variables);
+        return dataStore.CreateTable(_tableName, ..._variables);
     }
     public static async FetchFromTable(_tableName: string, _items: string[] = ['*'], _where: string[] = [], _params: any[] = [], _postfix: string = ""): Promise<any[]>
     {
@@ -130,7 +130,7 @@ export class DataStore
         if (dataStore == undefined)
             return [];
 
-        return await dataStore.FetchFromTable(_tableName, _items, _where, _params, _postfix);
+        return dataStore.FetchFromTable(_tableName, _items, _where, _params, _postfix);
     }
     public static async InsertToTable(_tableName: string, ..._parameters: DataStoreParameter[]) : Promise<boolean>
     {
@@ -138,7 +138,7 @@ export class DataStore
         if (dataStore == undefined)
             return false;
 
-        return await dataStore.InsertToTable(_tableName, ..._parameters);
+        return dataStore.InsertToTable(_tableName, ..._parameters);
     }
     public static async GetLastInsertID(_tableName: string) : Promise<number>
     {
@@ -146,7 +146,7 @@ export class DataStore
         if (dataStore == undefined)
             return -1;
 
-        return await dataStore.GetLastInsertID(_tableName);
+        return dataStore.GetLastInsertID(_tableName);
     }
     public static async UpdateTable(_tableName: string, _where: string[], ..._parameters: DataStoreParameter[]) : Promise<boolean>
     {
@@ -154,7 +154,7 @@ export class DataStore
         if (dataStore == undefined)
             return false;
 
-        return await dataStore.UpdateTable(_tableName, _where, ..._parameters);
+        return dataStore.UpdateTable(_tableName, _where, ..._parameters);
     }
     public static async RemoveRowFromTable(_tableName: string, _where: string[]) : Promise<boolean>
     {
@@ -162,7 +162,7 @@ export class DataStore
         if (dataStore == undefined)
             return false;
 
-        return await dataStore.RemoveRowFromTable(_tableName, _where);
+        return dataStore.RemoveRowFromTable(_tableName, _where);
     }
     public static async DeleteTable(_tableName: string) : Promise<boolean>
     {
@@ -170,7 +170,7 @@ export class DataStore
         if (dataStore == undefined)
             return false;
 
-        return await dataStore.DeleteTable(_tableName);
+        return dataStore.DeleteTable(_tableName);
     }
 }
 

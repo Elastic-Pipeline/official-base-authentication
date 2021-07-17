@@ -1,21 +1,47 @@
-import { mkdirSync } from "node:fs";
-import path from "path";
-import sqlite from "sqlite3";
-import { isDirectory, mkdirs } from "../../../API/internal/statics";
 import { Logger } from "../../../API/Common/Logging";
+import { final } from "../../../API/Common/FinalDecoration";
 
 export type DataStoreFunc = (err: Error, ..._any: any[]) => void;
+export type DataStoreTableVariableModifiers = {
+    PRIMARY_KEY?:           boolean,
+    UNIQUE?:                boolean,
+    DEFAULT?:               string,
+    ON_DELETE?:             string,
+    ON_UPDATE?:             string,
+    AUTO_INCREMENT?:        boolean,
+    NOT_NULL?:              boolean,
+    COMMENT?:               string,
+}
+
+export enum DataStoreDataTypes
+{
+    TEXT        = "TEXT",
+    JSON        = "TEXT",
+    INTEGER     = "INTEGER",
+    TIMESTAMP   = "TIMESTAMP"
+}
+
+export interface DataStoreObject
+{
+    id: number;
+    SetId(_id: number) : void;
+    GetId() : number;
+    Commit() : Promise<boolean>;
+    Destroy() : Promise<boolean>;
+}
 
 export class DataStoreTableVariable
 {
     private name: string;
     private type: string;
-    private postFix: string;
-    constructor(_name: string, _type: string, _postFix: string = "")
+    private varType: string;
+    protected modifiers: DataStoreTableVariableModifiers;
+    constructor(_name: string, _varType: string | DataStoreDataTypes, _modifiers: DataStoreTableVariableModifiers = {})
     {
         this.name = _name;
-        this.type = _type;
-        this.postFix = _postFix;
+        this.type = this.constructor.name;
+        this.varType = _varType;
+        this.modifiers = _modifiers;
     }
     public GetName() : string
     {
@@ -25,14 +51,42 @@ export class DataStoreTableVariable
     {
         return this.type;
     }
-    public GetPostFix() : string
+    public GetVarType() : string
     {
-        return this.postFix;
+        return this.varType;
+    }
+    public GetModifiers() : DataStoreTableVariableModifiers
+    {
+        return this.modifiers;
+    }
+
+    public DisplayModifiers() : string
+    {
+        var ret: string[] = [];
+
+        // Todo :: Dialect Mappings.
+        if (this.modifiers.PRIMARY_KEY)
+            ret.push("PRIMARY KEY");
+        if (this.modifiers.UNIQUE)
+            ret.push("UNIQUE");
+        if (this.modifiers.DEFAULT)
+            ret.push(`DEFAULT ${this.modifiers.DEFAULT}`);
+        if (this.modifiers.AUTO_INCREMENT)
+            ret.push("AUTOINCREMENT"); // Sqlite Specific, need to modify this for other DataStores.
+        else if (this.modifiers.NOT_NULL) // Sqlite Specifically, cannot have Not null and Autoincrement at the same time - which makes sense.
+            ret.push("NOT NULL");
+        if (this.modifiers.ON_UPDATE)
+            ret.push(`ON UPDATE ${this.modifiers.ON_UPDATE}`);
+        if (this.modifiers.ON_DELETE)
+            ret.push(`ON DELETE ${this.modifiers.ON_DELETE}`);
+        if (this.modifiers.COMMENT)
+            ret.push(`COMMENT ${this.modifiers.COMMENT}`);
+        return ret.join(" ");
     }
 
     public toString() : string
     {
-        return `\`${this.name}\` ${this.type} ${this.postFix}`;
+        return `\`${this.name}\` ${this.varType} ${this.DisplayModifiers()}`;
     }
 }
 
@@ -43,6 +97,8 @@ export class DataStoreParameter
     constructor(_name: string, _value: any)
     {
         this.name = _name;
+        if (typeof(_value) == 'object')
+            _value = JSON.stringify(_value); // We want to make objects always stringified in json. Type-safety
         this.value = _value;
     }
     public GetName() : string
@@ -63,6 +119,7 @@ export class DataStoreParameter
 export abstract class DataStoreInterface
 {
     private type: string    = "";
+    protected isReady: boolean = true;
 
     protected name: string  = "";
     constructor(_name: string)
@@ -71,6 +128,10 @@ export abstract class DataStoreInterface
         this.type = this.constructor.name;
     }
 
+    public GetName() : string
+    {
+        return this.name;
+    }
     public GetType() : string
     {
         return this.type;
@@ -85,6 +146,7 @@ export abstract class DataStoreInterface
     public abstract DeleteTable(_tableName: string) : Promise<boolean>;
 }
 
+@final
 export class DataStore
 {
     private static currentDataStore: DataStoreInterface|undefined = undefined;
@@ -122,7 +184,15 @@ export class DataStore
         if (dataStore == undefined)
             return false;
 
-        return dataStore.CreateTable(_tableName, ..._variables);
+        try
+        {
+            return dataStore.CreateTable(_tableName, ..._variables);
+        }
+        catch(err)
+        {
+            Logger.error("Data Store Exception ["+ this.GetDataStore()?.GetType() +"] {CreateTable} ::>", err);
+        }
+        return false;
     }
     public static async FetchFromTable(_tableName: string, _items: string[] = ['*'], _where: string[] = [], _params: any[] = [], _postfix: string = ""): Promise<any[]>
     {
@@ -130,7 +200,15 @@ export class DataStore
         if (dataStore == undefined)
             return [];
 
-        return dataStore.FetchFromTable(_tableName, _items, _where, _params, _postfix);
+        try
+        {
+            return dataStore.FetchFromTable(_tableName, _items, _where, _params, _postfix);
+        }
+        catch(err)
+        {
+            Logger.error("Data Store Exception ["+ this.GetDataStore()?.GetType() +"] {FetchFromTable} ::>", err);
+        }
+        return [];
     }
     public static async InsertToTable(_tableName: string, ..._parameters: DataStoreParameter[]) : Promise<boolean>
     {
@@ -138,7 +216,15 @@ export class DataStore
         if (dataStore == undefined)
             return false;
 
-        return dataStore.InsertToTable(_tableName, ..._parameters);
+        try
+        {
+            return dataStore.InsertToTable(_tableName, ..._parameters);
+        }
+        catch(err)
+        {
+            Logger.error("Data Store Exception ["+ this.GetDataStore()?.GetType() +"] {InsertToTable} ::>", err);
+        }
+        return false;
     }
     public static async GetLastInsertID(_tableName: string) : Promise<number>
     {
@@ -146,7 +232,15 @@ export class DataStore
         if (dataStore == undefined)
             return -1;
 
-        return dataStore.GetLastInsertID(_tableName);
+        try
+        {
+            return dataStore.GetLastInsertID(_tableName);
+        }
+        catch(err)
+        {
+            Logger.error("Data Store Exception ["+ this.GetDataStore()?.GetType() +"] {GetLastInsertID} ::>", err);
+        }
+        return -1;
     }
     public static async UpdateTable(_tableName: string, _where: string[], ..._parameters: DataStoreParameter[]) : Promise<boolean>
     {
@@ -154,7 +248,15 @@ export class DataStore
         if (dataStore == undefined)
             return false;
 
-        return dataStore.UpdateTable(_tableName, _where, ..._parameters);
+        try
+        {
+            return dataStore.UpdateTable(_tableName, _where, ..._parameters);
+        }
+        catch(err)
+        {
+            Logger.error("Data Store Exception ["+ this.GetDataStore()?.GetType() +"] {UpdateTable} ::>", err);
+        }
+        return false;
     }
     public static async RemoveRowFromTable(_tableName: string, _where: string[]) : Promise<boolean>
     {
@@ -162,7 +264,15 @@ export class DataStore
         if (dataStore == undefined)
             return false;
 
-        return dataStore.RemoveRowFromTable(_tableName, _where);
+        try
+        {
+            return dataStore.RemoveRowFromTable(_tableName, _where);
+        }
+        catch(err)
+        {
+            Logger.error("Data Store Exception ["+ this.GetDataStore()?.GetType() +"] {RemoveRowFromTable} ::>", err);
+        }
+        return false;
     }
     public static async DeleteTable(_tableName: string) : Promise<boolean>
     {
@@ -170,190 +280,14 @@ export class DataStore
         if (dataStore == undefined)
             return false;
 
-        return dataStore.DeleteTable(_tableName);
-    }
-}
-
-export class SqliteDataStore extends DataStoreInterface
-{
-    private db: sqlite.Database;
-    private isReady: boolean = true; // Most likely bad, revisit later?
-
-    constructor(_dataFolder: string)
-    {
-        super("SQLite");
-
-        if (!isDirectory(_dataFolder))
-            mkdirs(_dataFolder);
-
-        this.db = new sqlite.Database(path.resolve(_dataFolder, 'sqlite.db'), sqlite.OPEN_READWRITE | sqlite.OPEN_CREATE, (err) => {
-            if (err)
-            {
-                this.isReady = false;
-                Logger.error("Sqlite Exception ::>", err);
-                return;
-            }
-        });
-    }
-
-    public AllSync(_string: string, _values: any[]) : Promise<any[]>
-    {
-        return new Promise<any[]>((resolve, reject) => {
-            this.db.all(_string, _values, (err: Error, rows: any[]) => {
-                if (err)
-                    return reject(err + ` - ${_string} (${_values})`);
-
-                return resolve(rows);
-            });
-        });
-    }
-
-    public ExecSync(_string: string, _values: any[]): Promise<void>
-    {
-        return new Promise<void>((resolve, reject) => {
-            this.db.run(_string, _values, (err: Error) => {
-                if (err)
-                    return reject(err + ` - ${_string} (${_values})`);
-
-                return resolve();
-            });
-        });
-    }
-
-    public async CreateTable(_tableName: string, ..._variables: DataStoreTableVariable[]): Promise<boolean>
-    {
-        if (_variables.length == 0)
-        {
-            Logger.error(`Creating Table: ${_tableName} - Failed, needs variables.`);
-            return false;
-        }
         try
         {
-            await this.ExecSync(`CREATE TABLE IF NOT EXISTS \`${_tableName}\` ( ${_variables.join(',')} )`, []);
-            return true;
+            return dataStore.DeleteTable(_tableName);
         }
         catch(err)
         {
-            Logger.error(`Creating Table: ${_tableName} - Exception ::> ${err}`);
+            Logger.error("Data Store Exception ["+ this.GetDataStore()?.GetType() +"] {DeleteTable} ::>", err);
         }
-
-        return false;
-    }
-
-    public async FetchFromTable(_tableName: string, _items: string[], _where: string[], _params: any[] = [], _postfix: string = ""): Promise<any[]>
-    {
-        var whereStr: string = "";
-        if (_where.length > 0)
-        {
-            whereStr = "WHERE " + _where.join(' AND ');
-        }
-
-        try
-        {
-            return await this.AllSync(`SELECT ${_items.join(',')} FROM \`${_tableName}\` ${whereStr} ${_postfix}`, _params);
-        }
-        catch(err)
-        {
-            Logger.error(`Fetching from Table: ${_tableName} - Exception ::> ${err}`);
-        }
-
-        return [];
-    }
-
-    public async InsertToTable(_tableName: string, ..._parameters: DataStoreParameter[]): Promise<boolean>
-    {
-        var variableNames: string[] = [];
-        var variableValues: any[] = [];
-        for (let index = 0; index < _parameters.length; index++) {
-            const variable = _parameters[index];
-            variableNames.push(`\`${variable.GetName()}\``);
-            variableValues.push(variable.GetValue());
-        }
-
-        try
-        {
-            await this.ExecSync(`INSERT INTO \`${_tableName}\` ( ${variableNames.join(',')} ) VALUES ( ${_parameters.join(',')} )`, variableValues);
-            return true;
-        }
-        catch(err)
-        {
-            Logger.error(`Inserting into Table: ${_tableName} - Exception ::> ${err}`);
-        }
-
-        return false;
-    }
-
-    public async GetLastInsertID(_tableName: string) : Promise<number>
-    {
-        try
-        {
-            const rows = await this.AllSync(`SELECT last_insert_rowid();`, []);
-            return rows[0]['last_insert_rowid()'];
-        }
-        catch(err)
-        {
-            Logger.error(`Last Insert ID: ${_tableName} - Exception ::> ${err}`);
-        }
-
-        return -1;
-    }
-
-    public async UpdateTable(_tableName: string, _where: string[], ..._parameters: DataStoreParameter[]): Promise<boolean>
-    {
-        var variableNames: string[] = [];
-        var variableValues: any[] = [];
-        for (let index = 0; index < _parameters.length; index++) {
-            const variable = _parameters[index];
-            variableNames.push(`\`${variable.GetName()}\` = ?`);
-            variableValues.push(variable.GetValue());
-        }
-
-        var whereStr: string = "";
-        if (_where.length > 0)
-        {
-            whereStr = "WHERE " + _where.join(' && ');
-        }
-
-        try
-        {
-            await this.ExecSync(`UPDATE \`${_tableName}\` SET ${variableNames.join(',')} ${whereStr}`, variableValues);
-            return true;
-        }
-        catch(err)
-        {
-            Logger.error(`Update Table: ${_tableName} - Exception ::> ${err}`);
-        }
-
-        return false;
-    }
-
-    public async RemoveRowFromTable(_tableName: string, _where: string[]): Promise<boolean>
-    {
-        try
-        {
-            await this.ExecSync(`DROP TABLE \`${_tableName}\``, []);
-            return true;
-        }
-        catch(err)
-        {
-            Logger.error(`Remove Row From Table: ${_tableName} - Exception ::> ${err}`);
-        }
-
-        return false;
-    }
-
-    public async DeleteTable(_tableName: string): Promise<boolean>
-    {
-        try
-        {
-            await this.ExecSync(`DROP TABLE \`${_tableName}\``, []);
-            return true;
-        }
-        catch(err)
-        {
-            Logger.error(`Delete Table: ${_tableName} - Exception ::> ${err}`);
-        }
-
         return false;
     }
 }

@@ -26,21 +26,23 @@
                     <h5 class="card-title text-center">Login</h5>
                     <hr/>
                     <%- login_form %>
-                    <% if (canRegister) { %>
                       <p class="text-center my-2">
-                        Don't have an account? <a href="<%- link('register') -%>">Join Us!</a><br/>
-                        <a href="<%- link('register') -%>">Forgot Password?</a>
+                        <% if (canRegister) { %>
+                          Don't have an account? <a href="<%- link('register') -%>">Join Us!</a><br/>
+                        <% } %>
+                        <% if (canForget) { %>
+                          <a href="<%- link('forget') -%>">Forgot Password?</a>
+                        <% } %>
                       </p>
-                    <% } %>
                   </div> <!-- <div class="card-body"> -->
-
-                  <div>
-                    <%- include(INTERNAL_MODULE_GLOBAL + '/partials/footer'); %>
-                  </div>
-                </div> <!-- <div class="card login-form px-4"> -->
+                </div> <!-- <div class="login-form px-4"> -->
               </div> <!-- <div class="col-6"> -->
             </div> <!-- <div class="row"> -->
-          </div>
+            <hr/>
+            <div>
+              <%- include(INTERNAL_MODULE_GLOBAL + '/partials/footer'); %>
+            </div>
+          </div> <!-- <div class="card"> -->
         </div> <!-- <div class="global-container"> -->
     </body>
 </html>

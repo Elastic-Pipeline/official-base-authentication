@@ -51,7 +51,7 @@ export class LoginRoute extends Route
                 user.SetUsername(registerForm.GetUserName());
                 user.SetPassword(registerForm.GetPassword());
                 user.SetEmail(registerForm.GetEmail());
-                if (await user.Submit())
+                if (await user.Commit())
                 {
                     res.cookie('session', user.GetId()); // Temporary thing; we just want to see, if we can pick it up later...
                     return res.redirect(RouteManager.GetRouteLabel('index'));
@@ -68,6 +68,15 @@ export class LoginRoute extends Route
 
             return res.status(200).render('views/login.ejs', { login_form: registerForm.View() });
         }, 'register');
+
+        this.Get("forget", async (req, res, next) =>
+        {
+            console.log("We don't forget here...");
+            UserBaseManager.Logout(req, res);
+
+            // Redirect to home; which should take you back to login (if enabled)
+            res.redirect(RouteManager.GetRouteLabel('index'));
+        }, 'forget');
 
         this.Get("logout", async (req, res, next) =>
         {

@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { ConfigurationBasePage } from "../../../official-configuaration-page/classes/ConfigurationPage";
+import { ConfigurationBasePage } from "../../../official-configuration-page/classes/ConfigurationPage";
 
 export class ConfigurationUserManagement extends ConfigurationBasePage
 {

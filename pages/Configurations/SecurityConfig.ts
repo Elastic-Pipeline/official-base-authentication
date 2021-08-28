@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { ConfigurationBasePage } from "../../../official-configuaration-page/classes/ConfigurationPage";
+import { ConfigurationBasePage } from "../../../official-configuration-page/classes/ConfigurationPage";
 import { FirewallManager } from "../../classes/FirewallBase";
 import { UserBaseController, UserBaseManager } from "../../classes/UserBase";
 

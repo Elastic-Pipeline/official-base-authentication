@@ -17,8 +17,9 @@ export class LoginRoute extends Route
             if (loginForm.Verify(req))
             {
                 const user = await loginForm.GetUser();
-                if (user != undefined)
+                if (user != undefined && user.IsValid())
                 {
+                    console.log("User Logged in:", user.GetId(), user.GetUsername(), user.GetPassword(), user.GetEmail(), user.GetType());
                     res.cookie('session', user.GetId()); // Temporary thing; we just want to see, if we can pick it up later...
                     return res.redirect(RouteManager.GetRouteLabel('index'));
                 }

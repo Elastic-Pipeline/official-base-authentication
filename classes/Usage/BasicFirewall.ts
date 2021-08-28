@@ -18,6 +18,7 @@ export class BasicFirewall extends FirewallBase
             const usr = await UserBaseManager.GetUser(req);
 
             var loggedOut = false;
+
             if (usr == undefined)
             {
                 loggedOut = true;

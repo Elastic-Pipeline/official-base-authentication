@@ -28,8 +28,17 @@ class BaseModule extends Module
         super("Base Authentication", fs.readFileSync(path.resolve(__dirname, "./version.txt")).toString("utf-8"));
 
         const dataStoreInterface = new SqliteDataStore(path.resolve(__dirname, 'data'));
-        DataStore.SetDataStore(dataStoreInterface);
-        FirewallManager.SetFirewall(new BasicFirewall());
+        DataStore.RegisterInterface(dataStoreInterface);
+        const firewallInterface = new BasicFirewall();
+        FirewallManager.RegisterFirewall(firewallInterface);
+        const userBaseInterface = new BasicUserController();
+        UserBaseManager.RegisterUserBase(userBaseInterface);
+
+        this.config.init("dataStoreInterface", dataStoreInterface.GetName());
+        this.config.init("firewallInterface", firewallInterface.GetType());
+        this.config.init("userBaseInterface", userBaseInterface.GetName());
+        this.config.init("allowForget", true);
+        this.config.init("allowRegistration", true);
 
         this.RegisterAssetFolder(__dirname + '/assets');
 
@@ -37,10 +46,26 @@ class BaseModule extends Module
             ConfigurationPage.AddSubPage(new ConfigurationSecurity());
 
         this.RegisterAppIntegration((_app) => {
-            UserBaseManager.SetUserBaseController(new BasicUserController()); // We want this to run after all modules are loaded.
+            const dataStoreInterface: string | null = this.config.get('dataStoreInterface', null) as string;
+            const firewallInterface: string | null = this.config.get('firewallInterface', null) as string;
+            const userBaseInterface: string | null = this.config.get('userBaseInterface', null) as string;
+            const allowForget: boolean = this.config.get('allowForget', false) as boolean;
+            const allowRegistration: boolean = this.config.get('allowRegistration', false) as boolean;
+            if (dataStoreInterface != null)
+            {
+                DataStore.SetDataStore(dataStoreInterface);
+            }
+            if (firewallInterface != null)
+            {
+                FirewallManager.SetFirewall(firewallInterface);
+            }
+            if (userBaseInterface != null)
+            {
+                UserBaseManager.SetUserBaseController(userBaseInterface);
+            }
 
-            _app.locals.canForget = UserBaseManager.CanForget();
-            _app.locals.canRegister = UserBaseManager.CanRegister();
+            _app.locals.canForget = allowForget && UserBaseManager.CanForget();
+            _app.locals.canRegister = allowRegistration && UserBaseManager.CanRegister();
 
             _app.use(session({
                 secret: GetSecretSessionToken(),
@@ -56,9 +81,10 @@ class BaseModule extends Module
 
             _app.use(async (req: Request, res: Response, next: NextFunction) =>
             {
-                const firewall = FirewallManager.GetFirewall();
-                if (firewall == undefined)
-                    return next();
+                // const firewall = FirewallManager.GetFirewall();
+                // if (firewall == undefined)
+                //     return next();
+                // console.log("Firewall Taking action.")
 
                 // Express doesn't have a clear way to handle asynchronise error calls... - This is dumb.
                 // if (err)
@@ -67,7 +93,7 @@ class BaseModule extends Module
                 //     await firewall.Call('error', _app, req, res, err);
                 //     return next();
                 // }
-                await firewall.Call('enter', _app, req, res);
+                await FirewallManager.Call('enter', _app, req, res);
 
                 if (res.statusMessage == undefined)
                 {
@@ -75,11 +101,6 @@ class BaseModule extends Module
                 }
             });
         }, AttachmentAppIntegration.PRE);
-
-        this.RegisterAppIntegration((_app) => {
-            // After we are done loading, we want to load the userbase.
-            UserBaseManager.GetUserBaseController().Initialize();
-        }, AttachmentAppIntegration.POST);
 
         this.RegisterRoute(new LoginRoute());
     }

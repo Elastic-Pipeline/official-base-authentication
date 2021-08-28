@@ -8,32 +8,39 @@ import path from "path";
 @final
 export class SqliteDataStore extends DataStoreInterface
 {
-    private db: sqlite.Database;
+    private db: sqlite.Database | null = null;
+    private dataFolder: string;
 
     constructor(_dataFolder: string)
     {
         super("SQLite");
 
-        if (!isDirectory(_dataFolder))
-            mkdirs(_dataFolder);
+        this.dataFolder = _dataFolder;
 
-        this.db = new sqlite.Database(path.resolve(_dataFolder, 'sqlite.db'), sqlite.OPEN_READWRITE | sqlite.OPEN_CREATE, (err) => {
+    }
+    public Init(): void
+    {
+        if (!isDirectory(this.dataFolder))
+            mkdirs(this.dataFolder);
+
+        this.db = new sqlite.Database(path.resolve(this.dataFolder, 'sqlite.db'), sqlite.OPEN_READWRITE | sqlite.OPEN_CREATE, (err) => {
             if (err)
             {
                 this.isReady = false;
                 Logger.error("Sqlite Exception ::>", err);
                 return;
             }
+            Logger.debug("<:: Sqlite is Ready ::>");
             this.isReady = true;
         });
     }
 
     public AllSync(_string: string, _values: any[]) : Promise<any[]>
     {
-        if (!this.isReady)
+        if (this.db == null || !this.isReady)
             return new Promise<any[]>((resolve, reject) => { reject("Execution isn't ready yet!"); });
         return new Promise<any[]>((resolve, reject) => {
-            this.db.all(_string, _values, (err: Error, rows: any[]) => {
+            this.db?.all(_string, _values, (err: Error, rows: any[]) => {
                 if (err)
                     return reject(err + ` - ${_string} (${_values})`);
 
@@ -47,7 +54,7 @@ export class SqliteDataStore extends DataStoreInterface
         if (!this.isReady)
             return new Promise<void>((resolve, reject) => { reject("Execution isn't ready yet!"); });
         return new Promise<void>((resolve, reject) => {
-            this.db.run(_string, _values, (err: Error) => {
+            this.db?.run(_string, _values, (err: Error) => {
                 if (err)
                     return reject(err + ` - ${_string} (${_values})`);
 

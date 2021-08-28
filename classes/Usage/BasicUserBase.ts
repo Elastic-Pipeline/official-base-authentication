@@ -33,7 +33,7 @@ export class BasicUser extends UserBase
         const accessIdentifier: string = '' + _accessIdentifier;
         const password: string = '' + _password;
 
-        const rows = await DataStore.FetchFromTable("users", ["*"], [`username=\"${accessIdentifier}\"`, `password=\"${password}\"`], [], "LIMIT 1")
+        const rows = await DataStore.FetchFromTable("users", ["*"], [`\`username\`=\"${accessIdentifier}\"`, `\`password\`=\"${password}\"`], [], "LIMIT 1")
         if (rows.length == 0)
             return false;
 
@@ -91,7 +91,6 @@ export class BasicUserController extends UserBaseController
     }
     private async TestBench()
     {
-        console.log("Basic User Controller TestBench!");
         const testUser = UserBaseManager.NewUser() as BasicUser;
         testUser.SetUsername("Test User");
         testUser.SetPassword("Test");

@@ -1,9 +1,5 @@
-import { Application, Request, Response } from "express";
 import { final } from "../../../API/Common/FinalDecoration";
 import { LiteralUnion } from "../../../API/Common/LiteralUnion";
-import { RouteManager } from "../../../API/Routing/RouteManager";
-import { Route } from "../../../API/Routing/Routing";
-import { UserBaseManager } from "./UserBase";
 
 export type FirewallFunc = (..._args: any[]) => Promise<void>;
 
@@ -41,35 +37,54 @@ export class FirewallBase
 @final
 export class FirewallManager
 {
-    private static currentFirewallBase: FirewallBase = new FirewallBase();
-    private static firewalls: FirewallBase[] = [];
+    private static currentFirewallBase: FirewallBase|undefined;
+    private static firewalls: Map<string, FirewallBase> = new Map();
 
-    public static GetFirewall() : FirewallBase
+    public static GetFirewall() : FirewallBase|undefined
     {
         return this.currentFirewallBase;
     }
 
     public static RegisterFirewall(_firewall : FirewallBase) : void
     {
-        this.firewalls.push(_firewall);
+        this.firewalls.set(_firewall.GetType(),_firewall);
     }
 
-    public static SetFirewall(_firewall : FirewallBase) : void
+    public static SetFirewall(_firewall : FirewallBase|string|undefined) : void
     {
-        if (!this.firewalls.includes(_firewall))
+        if (_firewall == undefined)
         {
-            this.RegisterFirewall(_firewall);
+            this.currentFirewallBase = undefined;
+            return;
         }
-        this.currentFirewallBase = _firewall;
+
+        if (_firewall instanceof FirewallBase)
+        {
+            if (!this.firewalls.has(_firewall.GetType()))
+            {
+                this.RegisterFirewall(_firewall);
+            }
+            this.currentFirewallBase = _firewall;
+        }
+        else
+        {
+            if (this.firewalls.has(_firewall))
+            {
+                this.currentFirewallBase = this.firewalls.get(_firewall);
+            }
+        }
     }
 
-    public static GetFirewalls() : FirewallBase[]
+    public static GetFirewalls() : Map<string, FirewallBase>
     {
         return this.firewalls;
     }
 
-    public static Call(_eventName : FirewallEvents, ..._args: any) : void
+    public static async Call(_eventName : FirewallEvents, ..._args: any) : Promise<void>
     {
-        this.currentFirewallBase.Call(_eventName, ..._args);
+        if (this.currentFirewallBase == undefined)
+            return;
+
+        await this.currentFirewallBase.Call(_eventName, ..._args);
     }
 }

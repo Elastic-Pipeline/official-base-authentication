@@ -137,6 +137,7 @@ export abstract class DataStoreInterface
         return this.type;
     }
 
+    public abstract Init() : void;
     public abstract CreateTable(_tableName: string, ..._variables: DataStoreTableVariable[]) : Promise<boolean>;
     public abstract FetchFromTable(_tableName: string, _items: string[], _where: string[], _params: any[], _postfix: string): Promise<any[]>;
     public abstract InsertToTable(_tableName: string, ..._parameters: DataStoreParameter[]) : Promise<boolean>;
@@ -150,16 +151,16 @@ export abstract class DataStoreInterface
 export class DataStore
 {
     private static currentDataStore: DataStoreInterface|undefined = undefined;
-    private static dataStoreInterfaces: Array<DataStoreInterface> = new Array();
+    private static dataStoreInterfaces: Map<string, DataStoreInterface> = new Map();
 
-    public static GetAllInterfaces() : DataStoreInterface[]
+    public static GetAllInterfaces() : Map<string, DataStoreInterface>
     {
         return this.dataStoreInterfaces;
     }
 
     public static RegisterInterface(_dataStoreInterface: DataStoreInterface) : void
     {
-        this.dataStoreInterfaces.push(_dataStoreInterface);
+        this.dataStoreInterfaces.set(_dataStoreInterface.GetName(), _dataStoreInterface);
     }
 
     public static GetDataStore() : DataStoreInterface|undefined
@@ -167,15 +168,29 @@ export class DataStore
         return this.currentDataStore;
     }
 
-    public static SetDataStore(_interface: DataStoreInterface|undefined)
+    public static SetDataStore(_interface: DataStoreInterface|string|undefined)
     {
         if (_interface == undefined)
             return;
+        if (_interface instanceof DataStoreInterface)
+        {
+            // We got the class, so this might be apart of the initial stages.
+            if (!this.dataStoreInterfaces.has(_interface.GetName()))
+                this.RegisterInterface(_interface);
 
-        if (!this.dataStoreInterfaces.includes(_interface))
-            this.RegisterInterface(_interface);
-
-        this.currentDataStore = _interface;
+            this.currentDataStore = _interface;
+        }
+        else
+        {
+            // We got a string, so we only want to set the current interface.
+            if (this.dataStoreInterfaces.has(_interface))
+                this.currentDataStore = this.dataStoreInterfaces.get(_interface);
+        }
+        
+        if (this.currentDataStore != undefined)
+        {
+            this.currentDataStore?.Init();
+        }
     }
 
     public static async CreateTable(_tableName: string, ..._variables: DataStoreTableVariable[]) : Promise<boolean>

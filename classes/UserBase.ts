@@ -17,6 +17,11 @@ export class UserBase implements DataStoreObject
         this.type = this.constructor.name;
     }
 
+    public IsValid() : boolean
+    {
+        return this.GetId() > 0;
+    }
+
     public GetType() : string
     {
         return this.type;
@@ -84,13 +89,20 @@ export class UserBase implements DataStoreObject
 export class UserBaseController
 {
     private userBase: typeof UserBase;
+    private name: string;
 
-    constructor(_type: typeof UserBase)
+    constructor(_target: typeof UserBase)
     {
-        this.userBase = _type;
+        this.userBase = _target;
+        this.name = this.constructor.name;
     }
 
     public Initialize() : void {};
+
+    public GetName() : string
+    {
+        return this.name;
+    }
 
     public GetUserBase() : typeof UserBase
     {
@@ -105,8 +117,8 @@ function newObject<T>(_type: new(..._args: any[]) => T ) : T
 
 export class UserBaseManager
 {
-    private static currentUserBaseController: UserBaseController = new UserBaseController(UserBase);
-    private static userBaseControllers: UserBaseController[] = new Array();
+    private static currentUserBaseController: UserBaseController|undefined;
+    private static userBaseControllers: Map<string, UserBaseController> = new Map();
 
     public static Logout(_request: Request, _response: Response) : void
     {
@@ -138,7 +150,6 @@ export class UserBaseManager
     {
         if (this.GetUserBase() == null)
             throw new Error("No active Current User Base was Set!");
-            console.log("New User");
         return newObject<UserBase>(this.GetUserBase() as typeof UserBase);
     }
     public static async GetUserId(_id: number ) : Promise<UserBase|undefined>
@@ -150,7 +161,7 @@ export class UserBaseManager
         if ((await userT.LoginById(_id)) == false)
             return undefined;
 
-        console.log("Found ", userT.GetUsername(), userT.GetId());
+        console.log("Found User ", userT.GetUsername(), userT.GetId());
 
         return userT;
     }
@@ -173,29 +184,48 @@ export class UserBaseManager
 
     public static RegisterUserBase(_userbaseController: UserBaseController) : void
     {
-        this.userBaseControllers.push(_userbaseController);
+        this.userBaseControllers.set(_userbaseController.GetName(), _userbaseController);
     }
 
-    public static GetUserBaseController() : UserBaseController
+    public static GetUserBaseController() : UserBaseController|undefined
     {
         return this.currentUserBaseController;
     }
-    public static GetUserBase() : typeof UserBase
+    public static GetUserBase() : typeof UserBase|undefined
     {
-        return this.GetUserBaseController().GetUserBase();
+        return this.GetUserBaseController()?.GetUserBase() || undefined;
     }
 
-    public static SetUserBaseController(_userbase: UserBaseController) : void
+    public static SetUserBaseController(_controller: UserBaseController|string|undefined) : void
     {
-        if (!this.userBaseControllers.includes(_userbase))
+        if (_controller == undefined)
         {
-            this.RegisterUserBase(_userbase);
+            this.currentUserBaseController = undefined;
+            return;
         }
 
-        this.currentUserBaseController = _userbase;
+        if (_controller instanceof UserBaseController)
+        {
+            if (!this.userBaseControllers.has(_controller.GetName()))
+            {
+                this.RegisterUserBase(_controller);
+            }
+
+            this.currentUserBaseController = _controller;
+        }
+        else
+        {
+            if (this.userBaseControllers.has(_controller))
+                this.currentUserBaseController = this.userBaseControllers.get(_controller);
+        }
+
+        if (this.currentUserBaseController != undefined)
+        {
+            UserBaseManager.GetUserBaseController()?.Initialize();
+        }
     }
 
-    public static GetUserBaseControllers() : UserBaseController[]
+    public static GetUserBaseControllers() : Map<string, UserBaseController>
     {
         return this.userBaseControllers;
     }

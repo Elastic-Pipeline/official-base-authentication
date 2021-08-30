@@ -1,16 +1,19 @@
 import { NextFunction, Request, Response } from "express";
 import { ConfigurationBasePage } from "../../../official-configuration-page/classes/ConfigurationPage";
 
-export class ConfigurationUserManagement extends ConfigurationBasePage
+export module Configuration
 {
-    constructor()
+    export class UserManagement extends ConfigurationBasePage
     {
-        super("Manage Users", "/configuration/manage-users", 'configuration/manage-users');
-        this.SetDescription("Global Security is setup here.");
-    }
+        constructor()
+        {
+            super("Manage Users", "manage/users", false);
+            this.SetDescription("Manage Users by adding, removing, and editing their personal information.");
+        }
 
-    public async RouteFunction(req: Request, res: Response, next: NextFunction)
-    {
-        return res.send("Okay!");
+        public async RouteFunction(req: Request, res: Response, next: NextFunction)
+        {
+            return res.send("Okay!");
+        }
     }
 }

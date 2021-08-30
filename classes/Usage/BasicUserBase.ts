@@ -89,22 +89,6 @@ export class BasicUserController extends UserBaseController
     {
         super(BasicUser);
     }
-    private async TestBench()
-    {
-        const testUser = UserBaseManager.NewUser() as BasicUser;
-        testUser.SetUsername("Test User");
-        testUser.SetPassword("Test");
-        testUser.SetEmail("test@email.com");
-        await testUser.Commit();
-        await testUser.Destroy();
-        testUser.SetUsername("test");
-        testUser.SetPassword("test");
-        await testUser.Commit();
-
-
-        // const users = await DataStore.FetchFromTable("users", ['*']);
-        // console.log(users);
-    }
 
     public async Initialize() : Promise<void>
     {
@@ -116,7 +100,5 @@ export class BasicUserController extends UserBaseController
             new DataStoreTableVariable("email", "VARCHAR(64)", { NOT_NULL: true }),
             new DataStoreTableVariable("creationDate", "TIMESTAMP", { DEFAULT: "CURRENT_TIMESTAMP", NOT_NULL: true })
         );
-
-        this.TestBench();
     }
 }

@@ -91,6 +91,9 @@ export class UserBaseController
     private userBase: typeof UserBase;
     private name: string;
 
+    protected allowRegistration: boolean = true;
+    protected allowForgotInfo: boolean = true;
+
     constructor(_target: typeof UserBase)
     {
         this.userBase = _target;
@@ -102,6 +105,16 @@ export class UserBaseController
     public GetName() : string
     {
         return this.name;
+    }
+
+    public IsRegistrationAllowed() : boolean
+    {
+        return this.allowRegistration;
+    }
+
+    public IsForgotInfoAllowed() : boolean
+    {
+        return this.allowForgotInfo;
     }
 
     public GetUserBase() : typeof UserBase
@@ -232,11 +245,11 @@ export class UserBaseManager
 
     public static CanForget() : boolean
     {
-        return true;
+        return this.GetUserBaseController()?.IsForgotInfoAllowed() || false;
     }
 
     public static CanRegister() : boolean
     {
-        return true;
+        return this.GetUserBaseController()?.IsRegistrationAllowed() || false;
     }
 }

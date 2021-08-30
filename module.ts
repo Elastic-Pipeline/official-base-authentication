@@ -3,16 +3,19 @@ import { LoginRoute } from "./routes/login";
 import session from 'express-session';
 import crypto from "crypto";
 import fs from "fs";
-import path from "path";
-import { IsHTTPS, NextFunction, Request, Response } from "../../API/internal/statics";
-import { UserBaseManager } from "./classes/UserBase";
+import path, { dirname } from "path";
+import { IsHTTPS, NextFunction, pathExists, Request, Response } from "../../API/internal/statics";
+import { UserBase, UserBaseManager } from "./classes/UserBase";
 import { DataStore } from "./classes/DataStore";
 import { FirewallManager } from "./classes/FirewallBase";
-import { ConfigurationPage } from "../official-configuaration-page/pages/ConfigurationIndex";
-import { ConfigurationSecurity } from "./pages/Configurations/SecurityConfig";
+import { ConfigurationPage } from "../official-configuration-page/pages/ConfigurationIndex";
+import { SecurityCategory } from "./pages/Configurations/SecurityCategory";
+import { Configuration as Configuration1 } from "./pages/Configurations/SecurityConfig";
+import { Configuration as Configuration2 } from "./pages/Configurations/UserManagement";
 import { SqliteDataStore } from "./classes/Usage/SqliteDataBase";
 import { BasicFirewall } from "./classes/Usage/BasicFirewall";
 import { BasicUserController } from "./classes/Usage/BasicUserBase";
+import { ModuleConfig, ModuleConfigDir } from "../../API/Modules/ModuleConfig";
 
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;
@@ -43,9 +46,13 @@ class BaseModule extends Module
         this.RegisterAssetFolder(__dirname + '/assets');
 
         if (ConfigurationPage)
-            ConfigurationPage.AddSubPage(new ConfigurationSecurity());
+        {
+            ConfigurationPage.AddSubPage(SecurityCategory);
+            SecurityCategory.AddSubPage(new Configuration1.Security(), 0);
+            SecurityCategory.AddSubPage(new Configuration2.UserManagement());
+        }
 
-        this.RegisterAppIntegration((_app) => {
+        this.RegisterAppIntegration(async (_app) => {
             const dataStoreInterface: string | null = this.config.get('dataStoreInterface', null) as string;
             const firewallInterface: string | null = this.config.get('firewallInterface', null) as string;
             const userBaseInterface: string | null = this.config.get('userBaseInterface', null) as string;
@@ -62,6 +69,20 @@ class BaseModule extends Module
             if (userBaseInterface != null)
             {
                 UserBaseManager.SetUserBaseController(userBaseInterface);
+            }
+            console.log();
+            const dirName = __dirname.replace(/\\/g, '/').split('/').slice(-1)[0];
+            if (pathExists(path.resolve(ModuleConfigDir, dirName + ".mjson")))
+            {
+                const installerConfig = new ModuleConfig(dirName);
+                const testUser: UserBase | null = UserBaseManager.NewUser();
+                if (testUser != null)
+                {
+                    testUser.SetUsername(installerConfig.get('username', 'admin'));
+                    testUser.SetPassword(installerConfig.get('password', 'admin'));
+                    testUser.SetEmail(installerConfig.get('email', ''));
+                    await testUser.Commit();
+                }
             }
 
             _app.locals.canForget = allowForget && UserBaseManager.CanForget();
@@ -81,18 +102,6 @@ class BaseModule extends Module
 
             _app.use(async (req: Request, res: Response, next: NextFunction) =>
             {
-                // const firewall = FirewallManager.GetFirewall();
-                // if (firewall == undefined)
-                //     return next();
-                // console.log("Firewall Taking action.")
-
-                // Express doesn't have a clear way to handle asynchronise error calls... - This is dumb.
-                // if (err)
-                // {
-                //     console.log("Error Firewall Triggered.");
-                //     await firewall.Call('error', _app, req, res, err);
-                //     return next();
-                // }
                 await FirewallManager.Call('enter', _app, req, res);
 
                 if (res.statusMessage == undefined)
